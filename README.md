@@ -26,6 +26,20 @@ Or open `MazEdit.slnx` in Visual Studio and run the project.
 
 The **Save** button is disabled — write-back is not implemented yet, so changes stay in memory only.
 
+## Working with sample files
+
+`.maz` files usually cannot be uploaded to chat or GitHub. Use files locally instead:
+
+1. Copy your program into `TestData/` (this folder is gitignored).
+2. Run MazEdit and use **OPEN .MAZ** to load it from there.
+3. Click **EXPORT DUMP** to save a `.txt` report — hex + parsed units. That text file **is** safe to paste or upload here for reverse-engineering.
+
+Example local path:
+
+```text
+C:\Users\yulyo\source\repos\MazEdit\TestData\S120_B0.maz
+```
+
 ## Project layout
 
 | File | Purpose |

@@ -20,3 +20,8 @@ Desktop.ini
 
 ## Logs
 *.log
+
+## Local sample files (keep on disk, do not commit)
+TestData/*.maz
+TestData/*.MAZ
+TestData/*.txt

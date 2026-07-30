@@ -34,6 +34,8 @@
 
         <StackPanel Orientation="Horizontal" Background="#2D2D30" Grid.Row="0">
             <Button Content="OPEN .MAZ" Click="OpenBtn_Click" Margin="10" Width="100" Height="35" FontWeight="Bold" Cursor="Hand"/>
+            <Button x:Name="ExportDumpBtn" Content="EXPORT DUMP" Click="ExportDumpBtn_Click" IsEnabled="False" Margin="5" Width="110" Height="35" FontWeight="Bold" Cursor="Hand"
+                    ToolTip="Save a text report (safe to share) instead of the binary .maz file."/>
             <Button Content="SAVE CHANGES" IsEnabled="False" Margin="5" Width="120" Height="35" FontWeight="Bold"
                     ToolTip="Save is not implemented yet."/>
             <TextBlock x:Name="ProgHeader" Foreground="Lime" VerticalAlignment="Center" Margin="20,0" FontSize="18" FontWeight="Bold" FontFamily="Consolas" Text="SELECT A FILE..."/>

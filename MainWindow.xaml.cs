@@ -8,6 +8,7 @@ namespace MazEdit
     {
         private readonly MazParser _parser = new();
         private string _currentFilePath = string.Empty;
+        private MazProgram? _currentProgram;
 
         public MainWindow()
         {
@@ -24,15 +25,42 @@ namespace MazEdit
             try
             {
                 _currentFilePath = dlg.FileName;
-                MazProgram program = _parser.ParseSubProgram(_currentFilePath);
+                _currentProgram = _parser.ParseSubProgram(_currentFilePath);
 
-                ProgHeader.Text = $"PROG: {program.ProgramNo}  MAT: {program.Material}";
-                MazGrid.ItemsSource = program.Units;
-                StatusTxt.Text = $"Loaded {program.Units.Count} units from {Path.GetFileName(_currentFilePath)}.";
+                ProgHeader.Text = $"PROG: {_currentProgram.ProgramNo}  MAT: {_currentProgram.Material}";
+                MazGrid.ItemsSource = _currentProgram.Units;
+                ExportDumpBtn.IsEnabled = true;
+                StatusTxt.Text = $"Loaded {_currentProgram.Units.Count} units from {Path.GetFileName(_currentFilePath)}.";
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error opening file: {ex.Message}", "Open Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportDumpBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(_currentFilePath) || _currentProgram is null)
+                return;
+
+            var dlg = new SaveFileDialog
+            {
+                Filter = "Text report|*.txt",
+                FileName = Path.ChangeExtension(Path.GetFileName(_currentFilePath), ".txt"),
+                InitialDirectory = Path.GetDirectoryName(_currentFilePath)
+            };
+
+            if (dlg.ShowDialog() != true)
+                return;
+
+            try
+            {
+                MazDump.WriteReport(_currentFilePath, _currentProgram, dlg.FileName);
+                StatusTxt.Text = $"Dump saved to {Path.GetFileName(dlg.FileName)}.";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error exporting dump: {ex.Message}", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
