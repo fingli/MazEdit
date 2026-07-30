@@ -1,20 +1,22 @@
-﻿namespace MazEdit
+﻿using System.Collections.Generic;
+
+namespace MazEdit
 {
-    /// <summary>
-    /// One decoded 100-byte unit block from a .maz sub-program.
-    /// </summary>
     public class MazUnit
     {
         public int SequenceNo { get; set; }
-        public string TypeName { get; set; } = string.Empty;
-        public string GCodeLine { get; set; } = string.Empty;
-        public float X_Coord { get; set; }
-        public float Y_Coord { get; set; }
-        public float Z_Coord { get; set; }
+        public string TypeName { get; set; } = "";
+        public string Name { get; set; } = ""; // For "P2_M120_B180" etc.
 
-        /// <summary>Depth, feed override, or index angle depending on unit type.</summary>
-        public float Parameter { get; set; }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
+        public float Param { get; set; }
 
         public int FileOffset { get; set; }
+        public byte Marker { get; set; }
+
+        // THE HIERARCHY: Each unit can have sub-lines
+        public List<MazUnit> Children { get; set; } = new List<MazUnit>();
     }
 }

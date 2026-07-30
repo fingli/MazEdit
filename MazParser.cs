@@ -1,77 +1,77 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MazEdit
 {
-    /// <summary>
-    /// Reads Mazatrol Nexus 2 / Matrix sub-program (.maz) binary files.
-    /// Offsets were determined by reverse-engineering; treat unknown markers as experimental.
-    /// </summary>
     public class MazParser
     {
-        private const int ProgramNoOffset = 0x08;
-        private const int MaterialOffset = 0x54;
-        private const int MaterialLength = 12;
-        private const int UnitBlockStart = 0x64;
-        private const int UnitBlockSize = 100;
-        private const int CoordinateScale = 10000;
-
         public MazProgram ParseSubProgram(string filePath)
         {
             var program = new MazProgram();
-
-            if (!File.Exists(filePath))
-                return program;
-
             byte[] data = File.ReadAllBytes(filePath);
-            if (data.Length < MaterialOffset + MaterialLength)
-                return program;
 
-            program.ProgramNo = BitConverter.ToInt32(data, ProgramNoOffset);
-            program.Material = Encoding.ASCII.GetString(data, MaterialOffset, MaterialLength).TrimEnd('\0');
+            program.ProgramNo = BitConverter.ToInt32(data, 0x08);
+            program.Material = Encoding.ASCII.GetString(data, 0x54, 12).TrimEnd('\0');
 
-            for (int i = UnitBlockStart; i <= data.Length - UnitBlockSize; i += UnitBlockSize)
+            MazUnit currentParent = null;
+
+            // STRIDE IS 100 BYTES (0x64)
+            for (int i = 0x64; i < data.Length - 100; i += 100)
             {
                 byte marker = data[i];
-                if (marker == 0x00)
-                    continue;
+                if (marker == 0x00) continue;
 
-                var unit = new MazUnit
+                var line = new MazUnit
                 {
                     SequenceNo = BitConverter.ToInt16(data, i + 2),
-                    TypeName = DecodeUnitType(marker),
+                    Marker = marker,
                     FileOffset = i,
-                    X_Coord = BitConverter.ToInt32(data, i + 36) / (float)CoordinateScale,
-                    Y_Coord = BitConverter.ToInt32(data, i + 40) / (float)CoordinateScale,
-                    Z_Coord = BitConverter.ToInt32(data, i + 44) / (float)CoordinateScale,
-                    Parameter = BitConverter.ToInt32(data, i + 48) / (float)CoordinateScale
+                    TypeName = DecodeUnitType(marker),
+
+                    // COORDINATE MAPPING (Divide by 10,000)
+                    X = BitConverter.ToInt32(data, i + 36) / 10000.0f,
+                    Y = BitConverter.ToInt32(data, i + 40) / 10000.0f,
+                    Z = BitConverter.ToInt32(data, i + 44) / 10000.0f,
+                    Param = BitConverter.ToInt32(data, i + 48) / 10000.0f
                 };
 
-                // Unit headers and sub-program calls store a name at offset +12 (e.g. P2_M120).
-                if (marker is 0xA0 or 0x04)
+                // STRING EXTRACTION (Look for Names like P2_M120...)
+                line.Name = Encoding.ASCII.GetString(data, i + 12, 24).TrimEnd('\0').Trim();
+                line.Name = new string(line.Name.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+
+                // HIERARCHY LOGIC:
+                // A0, 0C, B2 are "Parents" (Start of a new Unit)
+                if (marker == 0xA0 || marker == 0x0C || marker == 0xB2 || marker == 0x02)
                 {
-                    unit.GCodeLine = Encoding.ASCII.GetString(data, i + 12, 24).TrimEnd('\0').Trim();
+                    currentParent = line;
+                    program.Units.Add(line);
                 }
-
-                program.Units.Add(unit);
+                else if (currentParent != null)
+                {
+                    // Everything else is a "Child" belonging to the unit above it
+                    currentParent.Children.Add(line);
+                }
             }
-
             return program;
         }
 
-        private static string DecodeUnitType(byte code) => code switch
+        private string DecodeUnitType(byte code)
         {
-            0xA0 => "UNIT HEADER",
-            0x04 => "SUB CALL",
-            0x0C => "WPC / COORD SHIFT",
-            0x03 => "END UNIT",
-            0x02 => "SHAPE / LINE",
-            0xB2 => "TOOL DATA",
-            0x66 => "TOOL PATH",
-            0xC2 => "COORDINATE",
-            0x20 => "POSITIONING",
-            0x24 => "SPEED/FEED",
-            _ => $"CODE {code:X2}"
-        };
+            return code switch
+            {
+                0xA0 => "UNIT HEADER",
+                0x0C => "WPC-1",
+                0x02 => "OFFSET",
+                0xB2 => "SLOT",
+                0x66 => "TOOL DATA",
+                0xC2 => "SHAPE DATA",
+                0x04 => "SUB CALL",
+                0x03 => "END UNIT",
+                _ => $"CODE {code:X2}"
+            };
+        }
     }
 }

@@ -39,22 +39,48 @@
             <TextBlock x:Name="ProgHeader" Foreground="Lime" VerticalAlignment="Center" Margin="20,0" FontSize="18" FontWeight="Bold" FontFamily="Consolas" Text="SELECT A FILE..."/>
         </StackPanel>
 
-        <DataGrid x:Name="MazGrid" Grid.Row="1" Background="Black" Foreground="Yellow"
-                  RowBackground="Black" AlternatingRowBackground="#121212"
-                  AutoGenerateColumns="False" CanUserAddRows="False"
-                  GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
-                  BorderThickness="0" FontSize="14" FontFamily="Consolas">
+        <DataGrid x:Name="MazGrid" Grid.Row="1" Background="Black" Foreground="Yellow" 
+          AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single"
+          RowBackground="Black" AlternatingRowBackground="#111" GridLinesVisibility="Horizontal">
+
             <DataGrid.Columns>
                 <DataGridTextColumn Header="SEQ" Binding="{Binding SequenceNo}" Width="40" IsReadOnly="True"/>
-                <DataGridTextColumn Header="TYPE" Binding="{Binding TypeName}" Width="130" IsReadOnly="True"/>
-                <DataGridTextColumn Header="X COORD" Binding="{Binding X_Coord}" Width="90"/>
-                <DataGridTextColumn Header="Y COORD" Binding="{Binding Y_Coord}" Width="90" Foreground="Yellow"/>
-                <DataGridTextColumn Header="Z COORD" Binding="{Binding Z_Coord}" Width="90"/>
-                <DataGridTextColumn Header="DEPTH / ANGLE" Binding="{Binding Parameter}" Width="110"/>
-                <DataGridTextColumn Header="NAME / COMMAND" Binding="{Binding GCodeLine}" Width="*" Foreground="Cyan"/>
+                <DataGridTextColumn Header="UNIT TYPE" Binding="{Binding TypeName}" Width="150" Foreground="Lime"/>
+                <DataGridTextColumn Header="X / NOM-Ø" Binding="{Binding X}" Width="100"/>
+                <DataGridTextColumn Header="Y / DEPTH" Binding="{Binding Y}" Width="100"/>
+                <DataGridTextColumn Header="Z / SRV-Z" Binding="{Binding Z}" Width="100"/>
+                <DataGridTextColumn Header="SUB-CALL / NAME" Binding="{Binding Name}" Width="*" Foreground="Cyan"/>
             </DataGrid.Columns>
-        </DataGrid>
 
+            <!-- HIERARCHY: Show children when row is selected -->
+            <DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                    <StackPanel Background="#1A1A1A" Margin="40,0,0,0">
+                        <TextBlock Text="↳ UNIT DETAILS (TOOLS/SHAPES):" Foreground="Gray" FontSize="10" Margin="5"/>
+                        <ItemsControl ItemsSource="{Binding Children}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding TypeName}" Foreground="Lime" Grid.Column="0"/>
+                                        <TextBlock Text="{Binding X}" Foreground="White" Grid.Column="1"/>
+                                        <TextBlock Text="{Binding Y}" Foreground="White" Grid.Column="2"/>
+                                        <TextBlock Text="{Binding Z}" Foreground="White" Grid.Column="3"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="Cyan" Grid.Column="4"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </DataTemplate>
+            </DataGrid.RowDetailsTemplate>
+        </DataGrid>
         <StatusBar Grid.Row="2" Background="#2D2D30">
             <TextBlock x:Name="StatusTxt" Foreground="LightGray" FontSize="12" Margin="10,0" Text="Ready"/>
         </StatusBar>
