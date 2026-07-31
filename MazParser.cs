@@ -18,7 +18,6 @@ namespace MazEdit
 
             MazUnit currentParent = null;
 
-            // STRIDE IS 100 BYTES (0x64)
             for (int i = 0x64; i < data.Length - 100; i += 100)
             {
                 byte marker = data[i];
@@ -27,31 +26,24 @@ namespace MazEdit
                 var line = new MazUnit
                 {
                     SequenceNo = BitConverter.ToInt16(data, i + 2),
-                    Marker = marker,
                     FileOffset = i,
                     TypeName = DecodeUnitType(marker),
-
-                    // COORDINATE MAPPING (Divide by 10,000)
                     X = BitConverter.ToInt32(data, i + 36) / 10000.0f,
                     Y = BitConverter.ToInt32(data, i + 40) / 10000.0f,
                     Z = BitConverter.ToInt32(data, i + 44) / 10000.0f,
-                    Param = BitConverter.ToInt32(data, i + 48) / 10000.0f
+                    Name = Encoding.ASCII.GetString(data, i + 12, 24).TrimEnd('\0').Trim()
                 };
 
-                // STRING EXTRACTION (Look for Names like P2_M120...)
-                line.Name = Encoding.ASCII.GetString(data, i + 12, 24).TrimEnd('\0').Trim();
-                line.Name = new string(line.Name.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
-
-                // HIERARCHY LOGIC:
-                // A0, 0C, B2 are "Parents" (Start of a new Unit)
+                // HIERARCHY LOGIC
                 if (marker == 0xA0 || marker == 0x0C || marker == 0xB2 || marker == 0x02)
                 {
+                    // This is a Main Unit Header
                     currentParent = line;
                     program.Units.Add(line);
                 }
                 else if (currentParent != null)
                 {
-                    // Everything else is a "Child" belonging to the unit above it
+                    // This is a sub-line (Tool or Shape) belonging to the parent above
                     currentParent.Children.Add(line);
                 }
             }
