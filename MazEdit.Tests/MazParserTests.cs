@@ -306,6 +306,58 @@ public class MazParserTests
         Assert.Equal(-102.5f, program.Units[4].X_Coord);
     }
 
+    [SkippableFact]
+    public void ParseSubProgram_RealTestMaz_MatchesControlListing()
+    {
+        string? path = GoldenMaz.TryFindTestMaz();
+        Skip.If(path is null,
+            "Copy TEST.MAZ into TestData/ (gitignored) or set MAZEDIT_TEST_MAZ to the file path.");
+
+        var program = new MazParser().ParseSubProgram(path);
+
+        Assert.Equal("CST IRN", program.Material);
+        Assert.Equal(200, program.InitialZ);
+        Assert.Equal(3, program.MultiMode);
+        Assert.Contains("MULTI MODE=OFFSET TYPE", program.Units[0].Summary);
+
+        string[] types = program.Units.Select(u => u.TypeName).ToArray();
+        Assert.Equal(
+        [
+            "SETUP", "OFS", "OFS", "INDEX", "WPC-2", "OFFSET",
+            "LINE CTR", "TOOL", "LINE", "CW", "END"
+        ], types);
+
+        MazUnit ofs2 = program.Units[2];
+        Assert.True(ofs2.IsChild);
+        Assert.Contains("X=205", ofs2.Summary);
+
+        MazUnit index = program.Units[3];
+        Assert.Contains("ANGLE=180", index.Summary);
+        Assert.Contains("DIR=NEAR DIR", index.Summary);
+
+        MazUnit wpc = program.Units[4];
+        Assert.Equal(-102.5f, wpc.X_Coord);
+        Assert.Equal(-552f, wpc.Y_Coord);
+        Assert.Equal(-541.5f, wpc.Parameter);
+
+        MazUnit tool = program.Units[7];
+        Assert.True(tool.IsChild);
+        Assert.Equal(4, tool.UnitNo);
+        Assert.Equal("END MILL  Φ=63  J  No=3  ZFD=G01  DEP-Z=3  C-SP=180  FR=1.2  M08 M51", tool.Summary);
+
+        MazUnit line = program.Units[8];
+        Assert.Equal("LINE", line.TypeName);
+        Assert.Equal(53.75f, line.X_Coord);
+
+        MazUnit cw = program.Units[9];
+        Assert.Equal("CW", cw.TypeName);
+        Assert.Contains("R/th=53.75", cw.Summary);
+
+        MazUnit end = program.Units[10];
+        Assert.Contains("CONTI=1", end.Summary);
+        Assert.Contains("NUMBER=1", end.Summary);
+    }
+
     [Theory]
     [InlineData(0, "A")]
     [InlineData(9, "J")]
