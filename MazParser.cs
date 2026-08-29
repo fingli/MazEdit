@@ -122,21 +122,29 @@ namespace MazEdit
                     break;
 
                 case 0xB1:
-                    unit.X_Coord = Coord(data, i, 36);
-                    unit.Y_Coord = Coord(data, i, 40);
-                    unit.Z_Coord = Coord(data, i, 44);
-                    unit.Parameter = Coord(data, i, 48);
-                    int pocket = BitConverter.ToInt16(data, i + 18);
-                    int m1 = BitConverter.ToInt16(data, i + 20);
-                    int m2 = BitConverter.ToInt16(data, i + 22);
+                    float diameter = Coord(data, i, 36);
+                    float aprchX = Coord(data, i, 40);
+                    float aprchY = Coord(data, i, 44);
+                    float depZ = Coord(data, i, 48);
+                    unit.X_Coord = diameter;
+                    unit.Y_Coord = aprchX;
+                    unit.Z_Coord = aprchY;
+                    unit.Parameter = depZ;
+                    int zfd = BitConverter.ToInt16(data, i + 20);
+                    int operationNo = BitConverter.ToInt16(data, i + 22);
+                    int m1 = BitConverter.ToInt16(data, i + 24);
+                    int m2 = BitConverter.ToInt16(data, i + 26);
+                    int m3 = BitConverter.ToInt16(data, i + 28);
                     int csp = BitConverter.ToInt32(data, i + 60);
                     float fr = Coord(data, i, 64);
                     byte toolType = data[i + 9];
+                    string toolLetter = DecodeToolLetter(data[i + 11]);
                     unit.TypeName = "TOOL";
-                    unit.Summary = Format("{0}  Ø={1}  J={2}  APRCH X={3} Y={4}  ZFD={5}  C-SP={6}  FR={7}  M {8} {9}",
-                        DecodeToolType(toolType), Num(unit.X_Coord), pocket,
-                        Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter),
-                        csp, Num(fr), m1, m2);
+                    unit.Summary = Format("{0}  Φ={1}  {2}  No={3}{4}  ZFD={5}  DEP-Z={6}  C-SP={7}  FR={8}  {9}",
+                        DecodeToolType(toolType), Num(diameter), toolLetter, operationNo,
+                        FormatApproach(aprchX, aprchY),
+                        DecodeZfd(zfd), Num(depZ),
+                        csp, Num(fr), FormatMCodes(m1, m2, m3));
                     break;
 
                 case 0xC2:
@@ -188,13 +196,42 @@ namespace MazEdit
             _ => $"DIR {code}"
         };
 
+        private static string DecodeToolLetter(byte index)
+        {
+            if (index <= 25)
+                return ((char)('A' + index)).ToString();
+            return $"L{index}";
+        }
+
         private static string DecodeToolType(byte code) => code switch
         {
             15 => "END MILL",
             _ => $"T{code}"
         };
 
+        private static string DecodeZfd(int code) => code switch
+        {
+            0 => "G00",
+            1 => "G01",
+            0x40 => "G01",
+            _ => $"G{code:D2}"
+        };
+
         private static string DecodeFigureType(byte code) => (code & 0x01) == 0 ? "LINE" : "CW";
+
+        private static string FormatApproach(float aprchX, float aprchY)
+        {
+            if (aprchX == 0 && aprchY == 0)
+                return string.Empty;
+
+            return Format("  APRCH-X={0}  APRCH-Y={1}", Num(aprchX), Num(aprchY));
+        }
+
+        private static string FormatMCodes(params int[] codes)
+        {
+            var parts = codes.Where(c => c != 0).Select(c => $"M{c:D2}");
+            return string.Join(" ", parts);
+        }
 
         private static float Coord(byte[] data, int block, int offset)
             => BitConverter.ToInt32(data, block + offset) / (float)CoordinateScale;
