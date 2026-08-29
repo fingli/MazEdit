@@ -1,9 +1,15 @@
 ﻿<Window x:Class="MazEdit.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MazEdit"
         Title="Mazatrol Nexus 2 Editor" Height="500" Width="900" Background="#1E1E1E">
 
     <Window.Resources>
+        <local:SummaryPartsConverter x:Key="SummaryPartsConverter"/>
+
+        <SolidColorBrush x:Key="FieldNameBrush" Color="#7FDBFF"/>
+        <SolidColorBrush x:Key="FieldValueBrush" Color="White"/>
+
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="#444444"/>
             <Setter Property="Foreground" Value="White"/>
@@ -18,10 +24,17 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="Blue"/>
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="#003366"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ValueTextColumn" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource FieldValueBrush}"/>
+        </Style>
+
+        <Style x:Key="NameTextColumn" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource FieldNameBrush}"/>
         </Style>
     </Window.Resources>
 
@@ -41,16 +54,39 @@
             <TextBlock x:Name="ProgHeader" Foreground="Lime" VerticalAlignment="Center" Margin="20,0" FontSize="18" FontWeight="Bold" FontFamily="Consolas" Text="SELECT A FILE..."/>
         </StackPanel>
 
-        <DataGrid x:Name="MazGrid" Grid.Row="1" Background="Black" Foreground="Yellow"
+        <DataGrid x:Name="MazGrid" Grid.Row="1" Background="Black" Foreground="White"
                   RowBackground="Black" AlternatingRowBackground="#121212"
                   AutoGenerateColumns="False" CanUserAddRows="False"
                   GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
                   BorderThickness="0" FontSize="14" FontFamily="Consolas">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="UNo" Binding="{Binding UnitNo}" Width="40" IsReadOnly="True"/>
-                <DataGridTextColumn Header="SNo" Binding="{Binding SequenceNo}" Width="40" IsReadOnly="True"/>
-                <DataGridTextColumn Header="TYPE" Binding="{Binding TypeName}" Width="90" IsReadOnly="True"/>
-                <DataGridTextColumn Header="SUMMARY" Binding="{Binding Summary}" Width="*" Foreground="Cyan" IsReadOnly="True"/>
+                <DataGridTextColumn Header="UNo" Binding="{Binding UnitNo}" Width="40" IsReadOnly="True"
+                                    ElementStyle="{StaticResource ValueTextColumn}"/>
+                <DataGridTextColumn Header="SNo" Binding="{Binding SequenceNo}" Width="40" IsReadOnly="True"
+                                    ElementStyle="{StaticResource ValueTextColumn}"/>
+                <DataGridTextColumn Header="TYPE" Binding="{Binding TypeName}" Width="90" IsReadOnly="True"
+                                    ElementStyle="{StaticResource NameTextColumn}"/>
+                <DataGridTemplateColumn Header="SUMMARY" Width="*" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ItemsControl ItemsSource="{Binding Summary, Converter={StaticResource SummaryPartsConverter}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource FieldNameBrush}"/>
+                                            <TextBlock Text="{Binding Value}" Foreground="{StaticResource FieldValueBrush}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 
