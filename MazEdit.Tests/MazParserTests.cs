@@ -1,0 +1,323 @@
+using Xunit;
+
+namespace MazEdit.Tests;
+
+public class MazParserTests
+{
+    [Fact]
+    public void ParseSubProgram_MissingFile_ReturnsEmptyProgram()
+    {
+        var program = new MazParser().ParseSubProgram(@"C:\no-such-file\missing.maz");
+
+        Assert.Empty(program.Units);
+        Assert.Equal(string.Empty, program.Material);
+        Assert.Equal(0, program.InitialZ);
+    }
+
+    [Fact]
+    public void ParseSubProgram_FileShorterThanHeader_ReturnsEmptyProgram()
+    {
+        var program = MazFileBuilder.Parse(new byte[0x50]);
+
+        Assert.Empty(program.Units);
+    }
+
+    [Fact]
+    public void ParseSubProgram_HeaderOnly_AddsSetupRow()
+    {
+        var program = MazFileBuilder.Parse(MazFileBuilder.Header());
+
+        MazUnit setup = Assert.Single(program.Units);
+        Assert.Equal("SETUP", setup.TypeName);
+        Assert.False(setup.IsChild);
+        Assert.Equal(0, setup.UnitNo);
+        Assert.Contains("MAT=CST IRN", setup.Summary);
+        Assert.Contains("INITIAL-Z=200", setup.Summary);
+        Assert.Contains("MULTI MODE=OFFSET TYPE", setup.Summary);
+        Assert.Equal(200, program.InitialZ);
+        Assert.Equal(3, program.MultiMode);
+        Assert.Equal("CST IRN", program.Material);
+    }
+
+    [Fact]
+    public void ParseSubProgram_UnknownMultiMode_UsesNumericLabel()
+    {
+        var data = MazFileBuilder.Header(multiMode: 1);
+        var program = MazFileBuilder.Parse(data);
+
+        Assert.Contains("MULTI MODE=MODE 1", program.Units[0].Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_TrimsNullPaddedMaterial()
+    {
+        var data = MazFileBuilder.Header(material: "AL");
+        var program = MazFileBuilder.Parse(data);
+
+        Assert.Equal("AL", program.Material);
+    }
+
+    [Fact]
+    public void ParseSubProgram_SkipsZeroMarkerBlocks()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        var program = MazFileBuilder.Parse(data);
+
+        Assert.Single(program.Units);
+        Assert.Equal("SETUP", program.Units[0].TypeName);
+    }
+
+    [Fact]
+    public void ParseSubProgram_IncludesLastFullBlock()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x03, 1);
+
+        var program = MazFileBuilder.Parse(data);
+
+        Assert.Equal(2, program.Units.Count);
+        Assert.Equal("OFFSET", program.Units[1].TypeName);
+        Assert.Equal(MazFileBuilder.BlockStart, program.Units[1].FileOffset);
+    }
+
+    [Fact]
+    public void ParseSubProgram_OfsAndToolAreChildren()
+    {
+        var data = MazFileBuilder.Header(blockCount: 3);
+        MazFileBuilder.WriteBlock(data, 0, 0xA0, 1);
+        MazFileBuilder.WriteBlock(data, 1, 0x40, 4);
+        MazFileBuilder.WriteBlock(data, 2, 0xB1, 1);
+
+        var program = MazFileBuilder.Parse(data);
+
+        Assert.Equal("OFS", program.Units[1].TypeName);
+        Assert.True(program.Units[1].IsChild);
+        Assert.Equal(0, program.Units[1].UnitNo);
+
+        Assert.Equal("LINE CTR", program.Units[2].TypeName);
+        Assert.False(program.Units[2].IsChild);
+
+        Assert.Equal("TOOL", program.Units[3].TypeName);
+        Assert.True(program.Units[3].IsChild);
+        Assert.Equal(4, program.Units[3].UnitNo);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Index_MapsAngleAndNearDir()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x0C, 1);
+        MazFileBuilder.WriteByte(data, 0, 8, 2);
+        MazFileBuilder.WriteCoord(data, 0, 40, 180);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("INDEX", unit.TypeName);
+        Assert.Equal(180, unit.Parameter);
+        Assert.Equal(0, unit.Y_Coord);
+        Assert.Contains("ANGLE=180", unit.Summary);
+        Assert.Contains("DIR=NEAR DIR", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Wpc_UsesNumberAndCoords()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x02, 2);
+        MazFileBuilder.WriteInt32(data, 0, 8, 2);
+        MazFileBuilder.WriteCoord(data, 0, 36, -102.5f);
+        MazFileBuilder.WriteCoord(data, 0, 40, -552f);
+        MazFileBuilder.WriteCoord(data, 0, 48, -541.5f);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("WPC-2", unit.TypeName);
+        Assert.Equal(-102.5f, unit.X_Coord);
+        Assert.Equal(-552f, unit.Y_Coord);
+        Assert.Equal(-541.5f, unit.Parameter);
+        Assert.Contains("X=-102.5", unit.Summary);
+        Assert.Contains("Z=-541.5", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Offset_UsesUvwLabels()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x03, 3);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("OFFSET", unit.TypeName);
+        Assert.Contains("U(X)=0", unit.Summary);
+        Assert.Contains("W(Z)=0", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_LineCtr_ReadsRghAndServes()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x40, 4);
+        MazFileBuilder.WriteByte(data, 0, 17, 3);
+        MazFileBuilder.WriteCoord(data, 0, 40, 3);
+        MazFileBuilder.WriteCoord(data, 0, 44, 30);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("LINE CTR", unit.TypeName);
+        Assert.Contains("SRV-Z=3", unit.Summary);
+        Assert.Contains("SRV-R=30", unit.Summary);
+        Assert.Contains("RGH=3", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Tool_MatchesControlRow()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0xB1, 1);
+        MazFileBuilder.WriteByte(data, 0, 9, 15);
+        MazFileBuilder.WriteByte(data, 0, 11, 9);
+        MazFileBuilder.WriteInt16(data, 0, 20, 0x40);
+        MazFileBuilder.WriteInt16(data, 0, 22, 3);
+        MazFileBuilder.WriteInt16(data, 0, 24, 8);
+        MazFileBuilder.WriteInt16(data, 0, 26, 51);
+        MazFileBuilder.WriteCoord(data, 0, 36, 63);
+        MazFileBuilder.WriteCoord(data, 0, 48, 3);
+        MazFileBuilder.WriteInt32(data, 0, 60, 180);
+        MazFileBuilder.WriteCoord(data, 0, 64, 1.2f);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("TOOL", unit.TypeName);
+        Assert.Equal("END MILL  Φ=63  J  No=3  ZFD=G01  DEP-Z=3  C-SP=180  FR=1.2  M08 M51", unit.Summary);
+        Assert.DoesNotContain("APRCH", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Tool_ShowsApproachWhenSet()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0xB1, 1);
+        MazFileBuilder.WriteCoord(data, 0, 40, 1.5f);
+        MazFileBuilder.WriteCoord(data, 0, 44, 2.5f);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Contains("APRCH-X=1.5", unit.Summary);
+        Assert.Contains("APRCH-Y=2.5", unit.Summary);
+        Assert.Equal(1.5f, unit.Y_Coord);
+        Assert.Equal(2.5f, unit.Z_Coord);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Tool_OmitsZeroMCodes_AndUnknownType()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0xB1, 1);
+        MazFileBuilder.WriteByte(data, 0, 9, 99);
+        MazFileBuilder.WriteInt16(data, 0, 20, 0);
+        MazFileBuilder.WriteInt16(data, 0, 24, 0);
+        MazFileBuilder.WriteInt16(data, 0, 26, 0);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Contains("T99", unit.Summary);
+        Assert.Contains("ZFD=G00", unit.Summary);
+        Assert.DoesNotContain("M00", unit.Summary);
+        Assert.DoesNotContain("M 0", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Figure_LineUsesSwappedXy()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0xC2, 1);
+        MazFileBuilder.WriteByte(data, 0, 8, 0x20);
+        MazFileBuilder.WriteCoord(data, 0, 36, 0);
+        MazFileBuilder.WriteCoord(data, 0, 40, 53.75f);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("LINE", unit.TypeName);
+        Assert.Equal(53.75f, unit.X_Coord);
+        Assert.Equal(0, unit.Y_Coord);
+        Assert.Contains("X=53.75", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Figure_OddTypeByteIsCw()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0xC2, 2);
+        MazFileBuilder.WriteByte(data, 0, 8, 0x21);
+        MazFileBuilder.WriteCoord(data, 0, 48, 53.75f);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("CW", unit.TypeName);
+        Assert.Contains("R/th=53.75", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_End_ReadsContiNumberAndDir()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x04, 5);
+        MazFileBuilder.WriteByte(data, 0, 8, 2);
+        MazFileBuilder.WriteByte(data, 0, 9, 1);
+        MazFileBuilder.WriteByte(data, 0, 10, 1);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("END", unit.TypeName);
+        Assert.False(unit.IsChild);
+        Assert.Contains("CONTI=1", unit.Summary);
+        Assert.Contains("NUMBER=1", unit.Summary);
+        Assert.Contains("DIR=NEAR DIR", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_UnknownMarker_ShowsCodeXx()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x99, 1);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("CODE 99", unit.TypeName);
+    }
+
+    [Fact]
+    public void ParseSubProgram_TestMazLayout_MatchesControlListing()
+    {
+        var program = MazFileBuilder.Parse(MazFileBuilder.TestMazLayout());
+        string[] types = program.Units.Select(u => u.TypeName).ToArray();
+
+        Assert.Equal(
+        [
+            "SETUP", "OFS", "OFS", "INDEX", "WPC-2", "OFFSET",
+            "LINE CTR", "TOOL", "LINE", "CW", "END"
+        ], types);
+
+        Assert.True(program.Units[1].IsChild);
+        Assert.True(program.Units[7].IsChild);
+        Assert.Equal(4, program.Units[7].UnitNo);
+        Assert.Contains("Φ=63", program.Units[7].Summary);
+        Assert.Contains("M08 M51", program.Units[7].Summary);
+        Assert.Equal(-102.5f, program.Units[4].X_Coord);
+    }
+
+    [Theory]
+    [InlineData(0, "A")]
+    [InlineData(9, "J")]
+    [InlineData(25, "Z")]
+    public void ParseSubProgram_ToolLetter_MapsIndexToAThroughZ(byte index, string letter)
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0xB1, 1);
+        MazFileBuilder.WriteByte(data, 0, 11, index);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Contains($"  {letter}  No=", unit.Summary);
+    }
+}

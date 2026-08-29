@@ -8,4 +8,10 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="MazEdit.Tests/**" />
+    <None Remove="MazEdit.Tests/**" />
+    <EmbeddedResource Remove="MazEdit.Tests/**" />
+  </ItemGroup>
+
 </Project>
