@@ -17,6 +17,7 @@ namespace MazEdit
             sb.AppendLine($"Size: {data.Length} bytes");
             sb.AppendLine($"Material: {program.Material}");
             sb.AppendLine($"Initial-Z: {program.InitialZ}");
+            sb.AppendLine($"Multi mode: {program.MultiMode}");
             sb.AppendLine($"Header+0x08: {program.ProgramNo}");
             sb.AppendLine();
             sb.AppendLine("=== Program (PAD-style) ===");

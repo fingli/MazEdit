@@ -11,6 +11,7 @@ namespace MazEdit
     public class MazParser
     {
         internal const int ProgramNoOffset = 0x08;
+        internal const int MultiModeOffset = 0x09;
         internal const int InitialZOffset = 0x28;
         internal const int MaterialOffset = 0x54;
         internal const int MaterialLength = 12;
@@ -30,6 +31,7 @@ namespace MazEdit
                 return program;
 
             program.ProgramNo = BitConverter.ToInt32(data, ProgramNoOffset);
+            program.MultiMode = data[MultiModeOffset];
             program.InitialZ = Coord(data, 0, InitialZOffset);
             program.Material = Encoding.ASCII.GetString(data, MaterialOffset, MaterialLength).TrimEnd('\0');
 
@@ -39,7 +41,8 @@ namespace MazEdit
                 SequenceNo = 0,
                 TypeName = "SETUP",
                 FileOffset = 0,
-                Summary = Format("MAT={0}  INITIAL-Z={1}", program.Material, Num(program.InitialZ)),
+                Summary = Format("MAT={0}  INITIAL-Z={1}  MULTI MODE={2}",
+                    program.Material, Num(program.InitialZ), DecodeMultiMode(program.MultiMode)),
                 Z_Coord = program.InitialZ
             };
             program.Units.Add(setup);
@@ -189,6 +192,12 @@ namespace MazEdit
         }
 
         private static bool IsChildMarker(byte marker) => marker is 0xA0 or 0xB1 or 0xC2;
+
+        private static string DecodeMultiMode(int code) => code switch
+        {
+            3 => "OFFSET TYPE",
+            _ => $"MODE {code}"
+        };
 
         private static string DecodeTurnDir(byte code) => code switch
         {
