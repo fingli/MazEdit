@@ -8,9 +8,6 @@ namespace MazEdit
     /// </summary>
     public static class MazDump
     {
-        private const int UnitBlockStart = 0x64;
-        private const int UnitBlockSize = 100;
-
         public static string BuildReport(string filePath, MazProgram program)
         {
             byte[] data = File.ReadAllBytes(filePath);
@@ -18,26 +15,43 @@ namespace MazEdit
 
             sb.AppendLine($"File: {Path.GetFileName(filePath)}");
             sb.AppendLine($"Size: {data.Length} bytes");
-            sb.AppendLine($"ProgramNo: {program.ProgramNo}");
             sb.AppendLine($"Material: {program.Material}");
+            sb.AppendLine($"Initial-Z: {program.InitialZ}");
+            sb.AppendLine($"Header+0x08: {program.ProgramNo}");
+            sb.AppendLine();
+            sb.AppendLine("=== Program (PAD-style) ===");
+
+            foreach (var unit in program.Units)
+            {
+                string indent = unit.IsChild ? "  " : "";
+                string line = $"{indent}U{unit.UnitNo}  {unit.TypeName}";
+                if (unit.IsChild)
+                    line = $"{indent}S{unit.SequenceNo}  {unit.TypeName}";
+                if (!string.IsNullOrEmpty(unit.Summary))
+                    line += "  " + unit.Summary;
+                sb.AppendLine(line);
+            }
+
             sb.AppendLine();
             sb.AppendLine("=== Header (first 0x100 bytes) ===");
             AppendHexBlock(sb, data, 0, Math.Min(data.Length, 0x100));
             sb.AppendLine();
-            sb.AppendLine($"=== Units ({program.Units.Count}) ===");
+            sb.AppendLine("=== Raw blocks ===");
 
             foreach (var unit in program.Units)
             {
-                sb.AppendLine();
-                sb.AppendLine($"--- Offset 0x{unit.FileOffset:X4} | SEQ {unit.SequenceNo} | {unit.TypeName} ---");
-                sb.AppendLine($"  X={unit.X_Coord}  Y={unit.Y_Coord}  Z={unit.Z_Coord}  Param={unit.Parameter}");
-                if (!string.IsNullOrEmpty(unit.GCodeLine))
-                    sb.AppendLine($"  Name: {unit.GCodeLine}");
+                if (unit.FileOffset < MazParser.UnitBlockStart)
+                    continue;
 
-                if (unit.FileOffset >= 0 && unit.FileOffset + UnitBlockSize <= data.Length)
+                sb.AppendLine();
+                sb.AppendLine($"--- Offset 0x{unit.FileOffset:X4} | {unit.TypeName} | SEQ {unit.SequenceNo} ---");
+                if (!string.IsNullOrEmpty(unit.Summary))
+                    sb.AppendLine($"  {unit.Summary}");
+
+                if (unit.FileOffset + MazParser.UnitBlockSize <= data.Length)
                 {
                     sb.AppendLine("  Raw block:");
-                    AppendHexBlock(sb, data, unit.FileOffset, UnitBlockSize, "    ");
+                    AppendHexBlock(sb, data, unit.FileOffset, MazParser.UnitBlockSize, "    ");
                 }
             }
 
@@ -54,11 +68,13 @@ namespace MazEdit
             int end = Math.Min(offset + length, data.Length);
             for (int i = offset; i < end; i += 16)
             {
+                int count = Math.Min(16, end - i);
                 sb.Append(indent);
                 sb.Append($"0x{i:X4}  ");
-                sb.Append(HexSlice(data, i, 16));
+                sb.Append(HexSlice(data, i, count));
+                sb.Append(' ', (16 - count) * 3);
                 sb.Append("  ");
-                sb.Append(AsciiSlice(data, i, 16));
+                sb.Append(AsciiSlice(data, i, count).PadRight(16));
                 sb.AppendLine();
             }
         }

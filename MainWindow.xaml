@@ -47,13 +47,14 @@
                   GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
                   BorderThickness="0" FontSize="14" FontFamily="Consolas">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="SEQ" Binding="{Binding SequenceNo}" Width="40" IsReadOnly="True"/>
-                <DataGridTextColumn Header="TYPE" Binding="{Binding TypeName}" Width="130" IsReadOnly="True"/>
-                <DataGridTextColumn Header="X COORD" Binding="{Binding X_Coord}" Width="90"/>
-                <DataGridTextColumn Header="Y COORD" Binding="{Binding Y_Coord}" Width="90" Foreground="Yellow"/>
-                <DataGridTextColumn Header="Z COORD" Binding="{Binding Z_Coord}" Width="90"/>
-                <DataGridTextColumn Header="DEPTH / ANGLE" Binding="{Binding Parameter}" Width="110"/>
-                <DataGridTextColumn Header="NAME / COMMAND" Binding="{Binding GCodeLine}" Width="*" Foreground="Cyan"/>
+                <DataGridTextColumn Header="UNo" Binding="{Binding UnitNo}" Width="40" IsReadOnly="True"/>
+                <DataGridTextColumn Header="SNo" Binding="{Binding SequenceNo}" Width="40" IsReadOnly="True"/>
+                <DataGridTextColumn Header="TYPE" Binding="{Binding TypeName}" Width="90" IsReadOnly="True"/>
+                <DataGridTextColumn Header="SUMMARY" Binding="{Binding Summary}" Width="*" Foreground="Cyan" IsReadOnly="True"/>
+                <DataGridTextColumn Header="X" Binding="{Binding X_Coord}" Width="80"/>
+                <DataGridTextColumn Header="Y" Binding="{Binding Y_Coord}" Width="80" Foreground="Yellow"/>
+                <DataGridTextColumn Header="Z" Binding="{Binding Z_Coord}" Width="80"/>
+                <DataGridTextColumn Header="P" Binding="{Binding Parameter}" Width="80"/>
             </DataGrid.Columns>
         </DataGrid>
 

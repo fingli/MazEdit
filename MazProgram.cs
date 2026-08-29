@@ -7,6 +7,7 @@
     {
         public int ProgramNo { get; set; }
         public string Material { get; set; } = string.Empty;
+        public float InitialZ { get; set; }
         public List<MazUnit> Units { get; set; } = [];
     }
 }

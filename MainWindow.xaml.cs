@@ -27,7 +27,7 @@ namespace MazEdit
                 _currentFilePath = dlg.FileName;
                 _currentProgram = _parser.ParseSubProgram(_currentFilePath);
 
-                ProgHeader.Text = $"PROG: {_currentProgram.ProgramNo}  MAT: {_currentProgram.Material}";
+                ProgHeader.Text = $"MAT: {_currentProgram.Material}  INITIAL-Z: {_currentProgram.InitialZ}";
                 MazGrid.ItemsSource = _currentProgram.Units;
                 ExportDumpBtn.IsEnabled = true;
                 StatusTxt.Text = $"Loaded {_currentProgram.Units.Count} units from {Path.GetFileName(_currentFilePath)}.";

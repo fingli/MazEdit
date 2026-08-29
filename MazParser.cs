@@ -1,20 +1,22 @@
-﻿using System.IO;
+﻿using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace MazEdit
 {
     /// <summary>
     /// Reads Mazatrol Nexus 2 / Matrix sub-program (.maz) binary files.
-    /// Offsets were determined by reverse-engineering; treat unknown markers as experimental.
+    /// Layout confirmed against TEST.MAZ and its PAD listing (MG3-252).
     /// </summary>
     public class MazParser
     {
-        private const int ProgramNoOffset = 0x08;
-        private const int MaterialOffset = 0x54;
-        private const int MaterialLength = 12;
-        private const int UnitBlockStart = 0x64;
-        private const int UnitBlockSize = 100;
-        private const int CoordinateScale = 10000;
+        internal const int ProgramNoOffset = 0x08;
+        internal const int InitialZOffset = 0x28;
+        internal const int MaterialOffset = 0x54;
+        internal const int MaterialLength = 12;
+        internal const int UnitBlockStart = 0x64;
+        internal const int UnitBlockSize = 100;
+        internal const int CoordinateScale = 10000;
 
         public MazProgram ParseSubProgram(string filePath)
         {
@@ -28,7 +30,21 @@ namespace MazEdit
                 return program;
 
             program.ProgramNo = BitConverter.ToInt32(data, ProgramNoOffset);
+            program.InitialZ = Coord(data, 0, InitialZOffset);
             program.Material = Encoding.ASCII.GetString(data, MaterialOffset, MaterialLength).TrimEnd('\0');
+
+            var setup = new MazUnit
+            {
+                UnitNo = 0,
+                SequenceNo = 0,
+                TypeName = "SETUP",
+                FileOffset = 0,
+                Summary = Format("MAT={0}  INITIAL-Z={1}", program.Material, Num(program.InitialZ)),
+                Z_Coord = program.InitialZ
+            };
+            program.Units.Add(setup);
+
+            MazUnit parent = setup;
 
             for (int i = UnitBlockStart; i <= data.Length - UnitBlockSize; i += UnitBlockSize)
             {
@@ -36,42 +52,157 @@ namespace MazEdit
                 if (marker == 0x00)
                     continue;
 
-                var unit = new MazUnit
-                {
-                    SequenceNo = BitConverter.ToInt16(data, i + 2),
-                    TypeName = DecodeUnitType(marker),
-                    FileOffset = i,
-                    X_Coord = BitConverter.ToInt32(data, i + 36) / (float)CoordinateScale,
-                    Y_Coord = BitConverter.ToInt32(data, i + 40) / (float)CoordinateScale,
-                    Z_Coord = BitConverter.ToInt32(data, i + 44) / (float)CoordinateScale,
-                    Parameter = BitConverter.ToInt32(data, i + 48) / (float)CoordinateScale
-                };
+                var unit = DecodeBlock(data, i, marker);
 
-                // Unit headers and sub-program calls store a name at offset +12 (e.g. P2_M120).
-                if (marker is 0xA0 or 0x04)
+                if (IsChildMarker(marker))
                 {
-                    unit.GCodeLine = Encoding.ASCII.GetString(data, i + 12, 24).TrimEnd('\0').Trim();
+                    unit.IsChild = true;
+                    unit.UnitNo = parent.UnitNo;
+                    program.Units.Add(unit);
+                    continue;
                 }
 
+                parent = unit;
                 program.Units.Add(unit);
             }
 
             return program;
         }
 
-        private static string DecodeUnitType(byte code) => code switch
+        private static MazUnit DecodeBlock(byte[] data, int i, byte marker)
         {
-            0xA0 => "UNIT HEADER",
-            0x04 => "SUB CALL",
-            0x0C => "WPC / COORD SHIFT",
-            0x03 => "END UNIT",
-            0x02 => "SHAPE / LINE",
-            0xB2 => "TOOL DATA",
-            0x66 => "TOOL PATH",
-            0xC2 => "COORDINATE",
-            0x20 => "POSITIONING",
-            0x24 => "SPEED/FEED",
-            _ => $"CODE {code:X2}"
+            short seq = BitConverter.ToInt16(data, i + 2);
+            var unit = new MazUnit
+            {
+                Marker = marker,
+                SequenceNo = seq,
+                UnitNo = seq,
+                FileOffset = i,
+                X_Coord = Coord(data, i, 36),
+                Y_Coord = Coord(data, i, 40),
+                Z_Coord = Coord(data, i, 44),
+                Parameter = Coord(data, i, 48)
+            };
+
+            switch (marker)
+            {
+                case 0xA0:
+                    unit.TypeName = "OFS";
+                    unit.Summary = Format("X={0}  Y={1}  th={2}  Z={3}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter));
+                    break;
+
+                case 0x0C:
+                    unit.TypeName = "INDEX";
+                    unit.Parameter = unit.Y_Coord;
+                    unit.Y_Coord = 0;
+                    unit.Summary = Format("TURN X={0}  Y={1}  Z={2}  ANGLE={3}  DIR={4}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter),
+                        DecodeTurnDir(data[i + 8]));
+                    break;
+
+                case 0x02:
+                    int wpcNo = BitConverter.ToInt32(data, i + 8);
+                    unit.TypeName = $"WPC-{wpcNo}";
+                    unit.Summary = Format("X={0}  Y={1}  th={2}  Z={3}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter));
+                    break;
+
+                case 0x03:
+                    unit.TypeName = "OFFSET";
+                    unit.Summary = Format("U={0}  V={1}  D={2}  W={3}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter));
+                    break;
+
+                case 0x40:
+                    int rgh = data[i + 17];
+                    unit.TypeName = "LINE CTR";
+                    unit.Summary = Format("DEPTH={0}  SRV-Z={1}  SRV-R={2}  RGH={3}  FIN-Z={4}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), rgh, Num(unit.Parameter));
+                    break;
+
+                case 0xB1:
+                    unit.X_Coord = Coord(data, i, 36);
+                    unit.Y_Coord = Coord(data, i, 40);
+                    unit.Z_Coord = Coord(data, i, 44);
+                    unit.Parameter = Coord(data, i, 48);
+                    int pocket = BitConverter.ToInt16(data, i + 18);
+                    int m1 = BitConverter.ToInt16(data, i + 20);
+                    int m2 = BitConverter.ToInt16(data, i + 22);
+                    int csp = BitConverter.ToInt32(data, i + 60);
+                    float fr = Coord(data, i, 64);
+                    byte toolType = data[i + 9];
+                    unit.TypeName = "TOOL";
+                    unit.Summary = Format("{0}  Ø={1}  J={2}  APRCH X={3} Y={4}  ZFD={5}  C-SP={6}  FR={7}  M {8} {9}",
+                        DecodeToolType(toolType), Num(unit.X_Coord), pocket,
+                        Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter),
+                        csp, Num(fr), m1, m2);
+                    break;
+
+                case 0xC2:
+                    unit.X_Coord = Coord(data, i, 40);
+                    unit.Y_Coord = Coord(data, i, 36);
+                    unit.Parameter = Coord(data, i, 48);
+                    unit.Z_Coord = 0;
+                    unit.TypeName = DecodeFigureType(data[i + 8]);
+                    unit.Summary = Format("X={0}  Y={1}  R/th={2}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Parameter));
+                    break;
+
+                case 0x04:
+                    unit.TypeName = "END";
+                    int conti = data[i + 9];
+                    int number = data[i + 10];
+                    int dir = data[i + 8];
+                    unit.Summary = Format("CONTI={0}  NUMBER={1}  DIR={2}",
+                        conti, number, DecodeTurnDir((byte)dir));
+                    break;
+
+                case 0xB2:
+                    unit.TypeName = "TOOL DATA";
+                    break;
+                case 0x66:
+                    unit.TypeName = "TOOL PATH";
+                    break;
+                case 0x20:
+                    unit.TypeName = "POSITIONING";
+                    break;
+                case 0x24:
+                    unit.TypeName = "SPEED/FEED";
+                    break;
+                default:
+                    unit.TypeName = $"CODE {marker:X2}";
+                    unit.Summary = Format("X={0}  Y={1}  Z={2}  P={3}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter));
+                    break;
+            }
+
+            return unit;
+        }
+
+        private static bool IsChildMarker(byte marker) => marker is 0xA0 or 0xB1 or 0xC2;
+
+        private static string DecodeTurnDir(byte code) => code switch
+        {
+            2 => "NEAR DIR",
+            _ => $"DIR {code}"
         };
+
+        private static string DecodeToolType(byte code) => code switch
+        {
+            15 => "END MILL",
+            _ => $"T{code}"
+        };
+
+        private static string DecodeFigureType(byte code) => (code & 0x01) == 0 ? "LINE" : "CW";
+
+        private static float Coord(byte[] data, int block, int offset)
+            => BitConverter.ToInt32(data, block + offset) / (float)CoordinateScale;
+
+        private static string Num(float value)
+            => value.ToString("0.####", CultureInfo.InvariantCulture);
+
+        private static string Format(string format, params object[] args)
+            => string.Format(CultureInfo.InvariantCulture, format, args);
     }
 }

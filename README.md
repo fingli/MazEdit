@@ -21,7 +21,7 @@ Or open `MazEdit.slnx` in Visual Studio and run the project.
 ## Usage
 
 1. Click **OPEN .MAZ** and select a sub-program file.
-2. Review units in the grid (sequence, type, coordinates, name/command).
+2. Review units in the grid (unit number, type, PAD-style summary, coordinates).
 3. Edit coordinate cells as needed.
 
 The **Save** button is disabled — write-back is not implemented yet, so changes stay in memory only.
@@ -50,14 +50,19 @@ C:\Users\yulyo\source\repos\MazEdit\TestData\S120_B0.maz
 
 ## Known unit markers
 
+Mapped from `TEST.MAZ` against its PAD listing. Other programs may still show `CODE XX`.
+
 | Code | Label |
 |------|-------|
-| `0xA0` | Unit header |
-| `0x04` | Sub call |
-| `0x0C` | WPC / coord shift |
-| `0x02` | Shape / line |
-| `0x66` | Tool path |
-| `0xB2` | Tool data |
+| file header | SETUP (material, INITIAL-Z at `0x28`) |
+| `0xA0` | OFS point (Unit 0) |
+| `0x0C` | INDEX |
+| `0x02` | WPC |
+| `0x03` | OFFSET |
+| `0x40` | LINE CTR |
+| `0xB1` | TOOL (child of machining unit) |
+| `0xC2` | FIGURE LINE / CW (child) |
+| `0x04` | END |
 | Other | Shown as `CODE XX` |
 
 ## License
