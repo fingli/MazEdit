@@ -1,6 +1,6 @@
 # MazEdit
 
-A Windows desktop editor for Mazatrol Nexus 2 / Matrix sub-program (`.maz`) files. It reads the binary format, shows program units in a grid, and lets you inspect and edit coordinates in memory.
+A Windows desktop editor for Mazatrol Nexus 2 / Matrix sub-program (`.maz`) files. It reads the binary format and shows program units in a grid with PAD-style field summaries.
 
 > **Note:** The `.maz` layout is reverse-engineered. Always keep a backup of original files before testing edits on a machine.
 
@@ -21,8 +21,7 @@ Or open `MazEdit.slnx` in Visual Studio and run the project.
 ## Usage
 
 1. Click **OPEN .MAZ** and select a sub-program file.
-2. Review units in the grid (unit number, type, PAD-style summary, coordinates).
-3. Edit coordinate cells as needed.
+2. Review units in the grid (unit number, type, PAD-style summary).
 
 The **Save** button is disabled — write-back is not implemented yet, so changes stay in memory only.
 

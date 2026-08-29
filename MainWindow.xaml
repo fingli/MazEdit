@@ -51,10 +51,6 @@
                 <DataGridTextColumn Header="SNo" Binding="{Binding SequenceNo}" Width="40" IsReadOnly="True"/>
                 <DataGridTextColumn Header="TYPE" Binding="{Binding TypeName}" Width="90" IsReadOnly="True"/>
                 <DataGridTextColumn Header="SUMMARY" Binding="{Binding Summary}" Width="*" Foreground="Cyan" IsReadOnly="True"/>
-                <DataGridTextColumn Header="X" Binding="{Binding X_Coord}" Width="80"/>
-                <DataGridTextColumn Header="Y" Binding="{Binding Y_Coord}" Width="80" Foreground="Yellow"/>
-                <DataGridTextColumn Header="Z" Binding="{Binding Z_Coord}" Width="80"/>
-                <DataGridTextColumn Header="P" Binding="{Binding Parameter}" Width="80"/>
             </DataGrid.Columns>
         </DataGrid>
 
