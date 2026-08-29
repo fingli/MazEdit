@@ -113,7 +113,7 @@ namespace MazEdit
 
                 case 0x03:
                     unit.TypeName = "OFFSET";
-                    unit.Summary = Format("U={0}  V={1}  D={2}  W={3}",
+                    unit.Summary = Format("U(X)={0}  V(Y)={1}  D(th)={2}  W(Z)={3}",
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter));
                     break;
 
