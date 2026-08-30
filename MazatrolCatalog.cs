@@ -64,6 +64,21 @@ namespace MazEdit
             _ => $"MODE {code}"
         };
 
+        public static readonly IReadOnlyList<string> Materials =
+        [
+            "CST IRN",
+            "DUCT IRN",
+            "CBN STL",
+            "ALY STL",
+            "STNLESS",
+            "ALUMINUM",
+            "L.C.STL",
+            "AL CAST"
+        ];
+
+        public static string Material(int code)
+            => code is >= 1 and <= 8 ? Materials[code - 1] : $"MAT {code}";
+
         public static string EndReturn(int code) => code switch
         {
             0 => "None",

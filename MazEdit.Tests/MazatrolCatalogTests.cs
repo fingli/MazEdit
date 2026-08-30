@@ -60,6 +60,18 @@ public class MazatrolCatalogTests
     public void ChamferOrRound_MapsRChamferFlag(int code, string label)
         => Assert.Equal(label, MazatrolCatalog.ChamferOrRound(code));
 
+    [Theory]
+    [InlineData(1, "CST IRN")]
+    [InlineData(2, "DUCT IRN")]
+    [InlineData(3, "CBN STL")]
+    [InlineData(4, "ALY STL")]
+    [InlineData(5, "STNLESS")]
+    [InlineData(6, "ALUMINUM")]
+    [InlineData(7, "L.C.STL")]
+    [InlineData(8, "AL CAST")]
+    public void Material_MapsSetupMatNames(int code, string name)
+        => Assert.Equal(name, MazatrolCatalog.Material(code));
+
     [Fact]
     public void PackedMarkers_StayOnKnownProgramAndLineCtrUnits()
     {
