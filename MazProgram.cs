@@ -19,6 +19,7 @@
 
         public string Material { get; set; } = string.Empty;
         public float InitialZ { get; set; }
+        public int AtcMode { get; set; }
         public int MultiMode { get; set; }
         public List<MazUnit> Units { get; set; } = [];
     }

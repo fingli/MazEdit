@@ -58,7 +58,7 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 
 | Code | Label |
 |------|-------|
-| file header | SETUP — NAME (file or EIA), material, INITIAL-Z (`0x28`), MULTI MODE (`0x09`; `3` = OFFSET TYPE) |
+| file header | Common unit (U0): NAME, MAT (`0x54`), INITIAL-Z (`0x28`), ATC MODE (`0x08`), MULTI MODE (`0x09`: 1=OFF, 2=5*2, 3=OFFSET TYPE) |
 | `0xA0` | OFS point (child of SETUP) |
 | `0x0C` | INDEX |
 | `0x02` | WPC |

@@ -9,7 +9,7 @@ namespace MazEdit
     /// </summary>
     public class MazParser
     {
-        internal const int ProgramNoOffset = 0x08;
+        internal const int AtcModeOffset = 0x08;
         internal const int MultiModeOffset = 0x09;
         internal const int InitialZOffset = 0x28;
         internal const int MaterialOffset = 0x54;
@@ -47,7 +47,8 @@ namespace MazEdit
             if (data.Length < MaterialOffset + MaterialLength)
                 return program;
 
-            program.PackedHeader08 = BitConverter.ToInt32(data, ProgramNoOffset);
+            program.AtcMode = data[AtcModeOffset];
+            program.PackedHeader08 = BitConverter.ToInt32(data, AtcModeOffset);
             program.MultiMode = data[MultiModeOffset];
             program.InitialZ = Coord(data, 0, InitialZOffset);
             program.Material = Encoding.ASCII.GetString(data, MaterialOffset, MaterialLength).TrimEnd('\0');
@@ -58,8 +59,9 @@ namespace MazEdit
                 SequenceNo = 0,
                 TypeName = "SETUP",
                 FileOffset = 0,
-                Summary = Format("NAME={0}  MAT={1}  INITIAL-Z={2}  MULTI MODE={3}",
-                    program.ProgramName, program.Material, Num(program.InitialZ), DecodeMultiMode(program.MultiMode)),
+                Summary = Format("NAME={0}  MAT={1}  INITIAL-Z={2}  ATC MODE={3}  MULTI MODE={4}",
+                    program.ProgramName, program.Material, Num(program.InitialZ),
+                    program.AtcMode, DecodeMultiMode(program.MultiMode)),
                 Z_Coord = program.InitialZ
             };
             program.Units.Add(setup);
@@ -221,6 +223,8 @@ namespace MazEdit
 
         private static string DecodeMultiMode(int code) => code switch
         {
+            1 => "OFF",
+            2 => "5 * 2",
             3 => "OFFSET TYPE",
             _ => $"MODE {code}"
         };

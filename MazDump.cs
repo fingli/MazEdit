@@ -21,6 +21,7 @@ namespace MazEdit
                 sb.AppendLine($"Format: {program.FormatId}");
             sb.AppendLine($"Material: {program.Material}");
             sb.AppendLine($"Initial-Z: {program.InitialZ}");
+            sb.AppendLine($"ATC mode: {program.AtcMode}");
             sb.AppendLine($"Multi mode: {program.MultiMode}");
             sb.AppendLine($"Packed header+0x08: {program.PackedHeader08}");
             sb.AppendLine();

@@ -33,19 +33,33 @@ public class MazParserTests
         Assert.Equal(0, setup.UnitNo);
         Assert.Contains("MAT=CST IRN", setup.Summary);
         Assert.Contains("INITIAL-Z=200", setup.Summary);
+        Assert.Contains("ATC MODE=0", setup.Summary);
         Assert.Contains("MULTI MODE=OFFSET TYPE", setup.Summary);
         Assert.Equal(200, program.InitialZ);
+        Assert.Equal(0, program.AtcMode);
         Assert.Equal(3, program.MultiMode);
         Assert.Equal("CST IRN", program.Material);
+    }
+
+    [Theory]
+    [InlineData(1, "OFF")]
+    [InlineData(2, "5 * 2")]
+    [InlineData(3, "OFFSET TYPE")]
+    public void ParseSubProgram_MultiMode_MapsKnownOptions(byte mode, string label)
+    {
+        var data = MazFileBuilder.Header(multiMode: mode);
+        var program = MazFileBuilder.Parse(data);
+
+        Assert.Contains($"MULTI MODE={label}", program.Units[0].Summary);
     }
 
     [Fact]
     public void ParseSubProgram_UnknownMultiMode_UsesNumericLabel()
     {
-        var data = MazFileBuilder.Header(multiMode: 1);
+        var data = MazFileBuilder.Header(multiMode: 9);
         var program = MazFileBuilder.Parse(data);
 
-        Assert.Contains("MULTI MODE=MODE 1", program.Units[0].Summary);
+        Assert.Contains("MULTI MODE=MODE 9", program.Units[0].Summary);
     }
 
     [Fact]
