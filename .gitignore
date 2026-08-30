@@ -2,6 +2,7 @@
 bin/
 obj/
 out/
+_testout/
 
 ## IDE / user-specific
 .vs/
