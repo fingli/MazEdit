@@ -48,6 +48,7 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 
 | File | Purpose |
 |------|---------|
+| `MazatrolCatalog.cs` | Shared Mazatrol unit names, field lists, and option labels |
 | `MazEiaHeader.cs` | EIA/PAD program number and name |
 | `MazProgram.cs` / `MazUnit.cs` | Parsed data models |
 | `MazDump.cs` | Text dump export |
@@ -63,7 +64,7 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 | `0x0C` | INDEX |
 | `0x02` | WPC |
 | `0x03` | OFFSET |
-| `0x40` | LINE CTR |
+| `0x40` | LINE CTR (central linear) — DEPTH, SRV-Z, SRV-R, RGH, FIN-Z; START/END not decoded yet |
 | `0xB1` | TOOL (child) — type (`+9`: 1 CTR-DR … 19 BAL EMIL), Φ, letter, No, ZFD, DEP-Z, C-SP, FR, M-codes; APRCH-X/Y only if set |
 | `0xC2` | FIGURE LINE / CW (child) |
 | `0x04` | END — CONTI (`+9`), NUMBER (`+10`), ATC (`+11`), RETURN (`+8`: 0=None, 1=Machine zero point, 2=Fixed point, 3=Arbitrary), WORK No. (`+16` if set), EXECUTE (`+20`: 0=YES, 1=NO) |

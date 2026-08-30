@@ -38,7 +38,7 @@ namespace MazEdit
                 program.Units.Add(new MazUnit
                 {
                     UnitNo = 0,
-                    TypeName = "SETUP",
+                    TypeName = MazatrolCatalog.Setup.TypeName,
                     Summary = FormatEiaSetup(program)
                 });
                 return program;
@@ -57,11 +57,11 @@ namespace MazEdit
             {
                 UnitNo = 0,
                 SequenceNo = 0,
-                TypeName = "SETUP",
+                TypeName = MazatrolCatalog.Setup.TypeName,
                 FileOffset = 0,
                 Summary = Format("NAME={0}  MAT={1}  INITIAL-Z={2}  ATC MODE={3}  MULTI MODE={4}",
                     program.ProgramName, program.Material, Num(program.InitialZ),
-                    program.AtcMode, DecodeMultiMode(program.MultiMode)),
+                    program.AtcMode, MazatrolCatalog.MultiMode(program.MultiMode)),
                 Z_Coord = program.InitialZ
             };
             program.Units.Add(setup);
@@ -109,18 +109,18 @@ namespace MazEdit
             switch (marker)
             {
                 case 0xA0:
-                    unit.TypeName = "OFS";
+                    unit.TypeName = MazatrolCatalog.Ofs.TypeName;
                     unit.Summary = Format("X={0}  Y={1}  th={2}  Z={3}",
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter));
                     break;
 
                 case 0x0C:
-                    unit.TypeName = "INDEX";
+                    unit.TypeName = MazatrolCatalog.Index.TypeName;
                     unit.Parameter = unit.Y_Coord;
                     unit.Y_Coord = 0;
                     unit.Summary = Format("TURN X={0}  Y={1}  Z={2}  ANGLE={3}  DIR={4}",
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter),
-                        DecodeTurnDir(data[i + 8]));
+                        MazatrolCatalog.TurnDir(data[i + 8]));
                     break;
 
                 case 0x02:
@@ -131,14 +131,14 @@ namespace MazEdit
                     break;
 
                 case 0x03:
-                    unit.TypeName = "OFFSET";
+                    unit.TypeName = MazatrolCatalog.Offset.TypeName;
                     unit.Summary = Format("U(X)={0}  V(Y)={1}  D(th)={2}  W(Z)={3}",
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), Num(unit.Parameter));
                     break;
 
                 case 0x40:
                     int rgh = data[i + 17];
-                    unit.TypeName = "LINE CTR";
+                    unit.TypeName = MazatrolCatalog.CentralLinear.TypeName;
                     unit.Summary = Format("DEPTH={0}  SRV-Z={1}  SRV-R={2}  RGH={3}  FIN-Z={4}",
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), rgh, Num(unit.Parameter));
                     break;
@@ -161,11 +161,11 @@ namespace MazEdit
                     float fr = Coord(data, i, 64);
                     byte toolType = data[i + 9];
                     string toolLetter = DecodeToolLetter(data[i + 11]);
-                    unit.TypeName = "TOOL";
+                    unit.TypeName = MazatrolCatalog.Tool.TypeName;
                     unit.Summary = Format("{0}  Φ={1}  {2}  No={3}{4}  ZFD={5}  DEP-Z={6}  C-SP={7}  FR={8}  {9}",
-                        DecodeToolType(toolType), Num(diameter), toolLetter, operationNo,
+                        MazatrolCatalog.ToolType(toolType), Num(diameter), toolLetter, operationNo,
                         FormatApproach(aprchX, aprchY),
-                        DecodeZfd(zfd), Num(depZ),
+                        MazatrolCatalog.Zfd(zfd), Num(depZ),
                         csp, Num(fr), FormatMCodes(m1, m2, m3));
                     break;
 
@@ -174,13 +174,13 @@ namespace MazEdit
                     unit.Y_Coord = Coord(data, i, 36);
                     unit.Parameter = Coord(data, i, 48);
                     unit.Z_Coord = 0;
-                    unit.TypeName = DecodeFigureType(data[i + 8]);
+                    unit.TypeName = MazatrolCatalog.FigureType(data[i + 8]);
                     unit.Summary = Format("X={0}  Y={1}  R/th={2}",
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Parameter));
                     break;
 
                 case 0x04:
-                    unit.TypeName = "END";
+                    unit.TypeName = MazatrolCatalog.End.TypeName;
                     int endReturn = data[i + 8];
                     int conti = data[i + 9];
                     int number = data[i + 10];
@@ -188,9 +188,9 @@ namespace MazEdit
                     int workNo = BitConverter.ToInt16(data, i + 16);
                     int execute = data[i + 20];
                     unit.Summary = Format("CONTI={0}  NUMBER={1}  ATC={2}  RETURN={3}{4}  EXECUTE={5}",
-                        conti, number, atc, DecodeEndReturn(endReturn),
+                        conti, number, atc, MazatrolCatalog.EndReturn(endReturn),
                         workNo == 0 ? "" : Format("  WORK No.={0}", workNo),
-                        DecodeExecute(execute));
+                        MazatrolCatalog.Execute(execute));
                     break;
 
                 case 0xB2:
@@ -226,76 +226,12 @@ namespace MazEdit
             return Format("NAME={0}  O={1}  FORMAT={2}", program.ProgramName, o, format);
         }
 
-        private static string DecodeMultiMode(int code) => code switch
-        {
-            1 => "OFF",
-            2 => "5 * 2",
-            3 => "OFFSET TYPE",
-            _ => $"MODE {code}"
-        };
-
-        private static string DecodeEndReturn(int code) => code switch
-        {
-            0 => "None",
-            1 => "Machine zero point",
-            2 => "Fixed point",
-            3 => "Arbitrary",
-            _ => $"RETURN {code}"
-        };
-
-        private static string DecodeExecute(int code) => code switch
-        {
-            0 => "YES",
-            1 => "NO",
-            _ => $"EXECUTE {code}"
-        };
-
-        private static string DecodeTurnDir(byte code) => code switch
-        {
-            2 => "NEAR DIR",
-            _ => $"DIR {code}"
-        };
-
         private static string DecodeToolLetter(byte index)
         {
             if (index <= 25)
                 return ((char)('A' + index)).ToString();
             return $"L{index}";
         }
-
-        private static string DecodeToolType(byte code) => code switch
-        {
-            1 => "CTR-DR",
-            2 => "DRILL",
-            3 => "REAMER",
-            4 => "TAP (M)",
-            5 => "TAP (UN)",
-            6 => "TAP (PT)",
-            7 => "TAP (PF)",
-            8 => "TAP (PS)",
-            9 => "TAP (OTHER)",
-            10 => "BCK FACE",
-            11 => "BOR BAR",
-            12 => "B-B BAR",
-            13 => "CHAMFER",
-            14 => "FCE MILL",
-            15 => "END MILL",
-            16 => "OTHER",
-            17 => "CHIP VAC",
-            18 => "T. SENS.",
-            19 => "BAL EMIL",
-            _ => $"T{code}"
-        };
-
-        private static string DecodeZfd(int code) => code switch
-        {
-            0 => "G00",
-            1 => "G01",
-            0x40 => "G01",
-            _ => $"G{code:D2}"
-        };
-
-        private static string DecodeFigureType(byte code) => (code & 0x01) == 0 ? "LINE" : "CW";
 
         private static string FormatApproach(float aprchX, float aprchY)
         {
