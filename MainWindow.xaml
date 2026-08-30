@@ -61,7 +61,7 @@
         <DataGrid x:Name="MazGrid" Grid.Row="1" Background="Black" Foreground="White"
                   RowBackground="Black" AlternatingRowBackground="#121212"
                   AutoGenerateColumns="False" CanUserAddRows="False"
-                  RowHeight="44" FontSize="16"
+                  RowHeight="24" FontSize="16"
                   GridLinesVisibility="All" HorizontalGridLinesBrush="#333" VerticalGridLinesBrush="#333"
                   BorderThickness="0" FontFamily="Consolas"
                   ScrollViewer.HorizontalScrollBarVisibility="Auto">
