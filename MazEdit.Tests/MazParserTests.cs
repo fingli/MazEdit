@@ -272,7 +272,7 @@ public class MazParserTests
     }
 
     [Fact]
-    public void ParseSubProgram_End_ReadsContiNumberAndDir()
+    public void ParseSubProgram_End_ReadsContiAtcReturnAndExecute()
     {
         var data = MazFileBuilder.Header(blockCount: 1);
         MazFileBuilder.WriteBlock(data, 0, 0x04, 5);
@@ -284,9 +284,45 @@ public class MazParserTests
 
         Assert.Equal("END", unit.TypeName);
         Assert.False(unit.IsChild);
-        Assert.Contains("CONTI=1", unit.Summary);
-        Assert.Contains("NUMBER=1", unit.Summary);
-        Assert.Contains("DIR=NEAR DIR", unit.Summary);
+        Assert.Equal("CONTI=1  NUMBER=1  ATC=0  RETURN=Fixed point  EXECUTE=YES", unit.Summary);
+        Assert.DoesNotContain("WORK No.", unit.Summary);
+        Assert.DoesNotContain("DIR=", unit.Summary);
+    }
+
+    [Theory]
+    [InlineData(0, "None")]
+    [InlineData(1, "Machine zero point")]
+    [InlineData(2, "Fixed point")]
+    [InlineData(3, "Arbitrary")]
+    public void ParseSubProgram_End_MapsReturnOptions(byte code, string label)
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x04, 1);
+        MazFileBuilder.WriteByte(data, 0, 8, code);
+
+        Assert.Contains($"RETURN={label}", MazFileBuilder.Parse(data).Units[1].Summary);
+    }
+
+    [Theory]
+    [InlineData(0, "YES")]
+    [InlineData(1, "NO")]
+    public void ParseSubProgram_End_MapsExecuteOptions(byte code, string label)
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x04, 1);
+        MazFileBuilder.WriteByte(data, 0, 20, code);
+
+        Assert.Contains($"EXECUTE={label}", MazFileBuilder.Parse(data).Units[1].Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_End_ShowsWorkNoWhenSet()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x04, 1);
+        MazFileBuilder.WriteInt16(data, 0, 16, 7);
+
+        Assert.Contains("WORK No.=7", MazFileBuilder.Parse(data).Units[1].Summary);
     }
 
     [Fact]
@@ -371,6 +407,8 @@ public class MazParserTests
         MazUnit end = program.Units[10];
         Assert.Contains("CONTI=1", end.Summary);
         Assert.Contains("NUMBER=1", end.Summary);
+        Assert.Contains("RETURN=Fixed point", end.Summary);
+        Assert.Contains("EXECUTE=YES", end.Summary);
     }
 
     [Theory]

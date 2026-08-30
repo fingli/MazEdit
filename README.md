@@ -66,7 +66,7 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 | `0x40` | LINE CTR |
 | `0xB1` | TOOL (child) — type, Φ, letter, No, ZFD, DEP-Z, C-SP, FR, M-codes; APRCH-X/Y only if set |
 | `0xC2` | FIGURE LINE / CW (child) |
-| `0x04` | END |
+| `0x04` | END — CONTI (`+9`), NUMBER (`+10`), ATC (`+11`), RETURN (`+8`: 0=None, 1=Machine zero point, 2=Fixed point, 3=Arbitrary), WORK No. (`+16` if set), EXECUTE (`+20`: 0=YES, 1=NO) |
 | Other | `CODE XX` |
 
 ## License

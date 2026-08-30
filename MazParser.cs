@@ -181,11 +181,16 @@ namespace MazEdit
 
                 case 0x04:
                     unit.TypeName = "END";
+                    int endReturn = data[i + 8];
                     int conti = data[i + 9];
                     int number = data[i + 10];
-                    int dir = data[i + 8];
-                    unit.Summary = Format("CONTI={0}  NUMBER={1}  DIR={2}",
-                        conti, number, DecodeTurnDir((byte)dir));
+                    int atc = data[i + 11];
+                    int workNo = BitConverter.ToInt16(data, i + 16);
+                    int execute = data[i + 20];
+                    unit.Summary = Format("CONTI={0}  NUMBER={1}  ATC={2}  RETURN={3}{4}  EXECUTE={5}",
+                        conti, number, atc, DecodeEndReturn(endReturn),
+                        workNo == 0 ? "" : Format("  WORK No.={0}", workNo),
+                        DecodeExecute(execute));
                     break;
 
                 case 0xB2:
@@ -227,6 +232,22 @@ namespace MazEdit
             2 => "5 * 2",
             3 => "OFFSET TYPE",
             _ => $"MODE {code}"
+        };
+
+        private static string DecodeEndReturn(int code) => code switch
+        {
+            0 => "None",
+            1 => "Machine zero point",
+            2 => "Fixed point",
+            3 => "Arbitrary",
+            _ => $"RETURN {code}"
+        };
+
+        private static string DecodeExecute(int code) => code switch
+        {
+            0 => "YES",
+            1 => "NO",
+            _ => $"EXECUTE {code}"
         };
 
         private static string DecodeTurnDir(byte code) => code switch
