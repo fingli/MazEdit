@@ -7,19 +7,17 @@ namespace MazEdit
     public sealed class MazatrolUnitKind
     {
         public MazatrolUnitKind(string typeName, string title, IReadOnlyList<string> fields,
-            string? gCode = null, byte? packedMarker = null)
+            byte? packedMarker = null)
         {
             TypeName = typeName;
             Title = title;
             Fields = fields;
-            GCode = gCode;
             PackedMarker = packedMarker;
         }
 
         public string TypeName { get; }
         public string Title { get; }
         public IReadOnlyList<string> Fields { get; }
-        public string? GCode { get; }
         public byte? PackedMarker { get; }
     }
 
@@ -274,13 +272,11 @@ namespace MazEdit
         public static readonly MazatrolUnitKind InsideLinear = new(
             "LINE IS", "Inside linear machining unit",
             [Field.Uno, Field.Depth, Field.SrvZ, Field.SrvR, Field.Rgh, Field.FinZ, Field.FinR, Field.InterR,
-                Field.RChamferFlag, Field.Chmf],
-            gCode: "G366");
+                Field.RChamferFlag, Field.Chmf]);
 
         public static readonly MazatrolUnitKind RightHandChamfering = new(
             "CHMF RGH", "Right-hand chamfering unit",
-            [Field.Uno, Field.Depth, Field.InterZ, Field.InterR, Field.Chmf, Field.Start, Field.End, Field.RChamferFlag],
-            gCode: "G367");
+            [Field.Uno, Field.Depth, Field.InterZ, Field.InterR, Field.Chmf, Field.Start, Field.End, Field.RChamferFlag]);
 
         public static readonly MazatrolUnitKind LeftHandChamfering = new(
             "CHMF L", "Left-hand chamfering unit",

@@ -65,8 +65,6 @@ public class MazatrolCatalogTests
     {
         Assert.Equal((byte)0x40, MazatrolCatalog.CentralLinear.PackedMarker);
         Assert.Equal((byte)0x04, MazatrolCatalog.End.PackedMarker);
-        Assert.Equal("G366", MazatrolCatalog.InsideLinear.GCode);
-        Assert.Equal("G367", MazatrolCatalog.RightHandChamfering.GCode);
         Assert.Null(MazatrolCatalog.Drilling.PackedMarker);
     }
 }
