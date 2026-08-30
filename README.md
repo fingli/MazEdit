@@ -4,6 +4,8 @@ A Windows desktop viewer for Mazatrol Nexus 2 / Matrix sub-program (`.maz`) file
 
 Layout was mapped from `TEST.MAZ` against its PAD listing (MG3-252). Other programs may still show unknown markers as `CODE XX`.
 
+Packed `.maz` files do not store the EIA **O** program number. The name on SETUP is the file name (for `TEST.MAZ`, **TEST**). Open a `.pad` / three-digit G-format listing to read `O99999999 (MG3-251 : name)` or `<NAME>(MG3-252)`. Names longer than 48 characters are truncated, as on the control.
+
 > **Note:** The `.maz` format is reverse-engineered. Keep a backup of original files. **Save is not implemented** — the app does not write back to disk.
 
 ## Requirements
@@ -31,7 +33,7 @@ Zip the `publish` folder and send `MazEdit.exe` with any files next to it.
 
 ## Usage
 
-1. Click **OPEN .MAZ** and select a sub-program.
+1. Click **OPEN .MAZ** (`.pad` listings are also accepted).
 2. Review **UNo**, **SNo**, **TYPE**, and **SUMMARY**. Child rows (OFS, TOOL, figures) keep the parent unit number.
 3. Parameter names are light blue; values are white.
 4. **EXPORT DUMP** writes a text report (PAD-style listing + hex). Use that when you cannot upload a `.maz` file.
@@ -46,7 +48,7 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 
 | File | Purpose |
 |------|---------|
-| `MazParser.cs` | Binary parser and field summaries |
+| `MazEiaHeader.cs` | EIA/PAD program number and name |
 | `MazProgram.cs` / `MazUnit.cs` | Parsed data models |
 | `MazDump.cs` | Text dump export |
 | `MainWindow.xaml` | UI |
@@ -56,7 +58,7 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 
 | Code | Label |
 |------|-------|
-| file header | SETUP — material, INITIAL-Z (`0x28`), MULTI MODE (`0x09`; `3` = OFFSET TYPE) |
+| file header | SETUP — NAME (file or EIA), material, INITIAL-Z (`0x28`), MULTI MODE (`0x09`; `3` = OFFSET TYPE) |
 | `0xA0` | OFS point (child of SETUP) |
 | `0x0C` | INDEX |
 | `0x02` | WPC |

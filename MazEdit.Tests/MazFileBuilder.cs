@@ -46,9 +46,9 @@ internal static class MazFileBuilder
     public static void WriteRawCoord(byte[] data, int absoluteOffset, float value)
         => BitConverter.GetBytes((int)Math.Round(value * Scale)).CopyTo(data, absoluteOffset);
 
-    public static MazProgram Parse(byte[] data)
+    public static MazProgram Parse(byte[] data, string? fileName = null)
     {
-        string path = Path.Combine(Path.GetTempPath(), $"mazedit-{Guid.NewGuid():N}.maz");
+        string path = Path.Combine(Path.GetTempPath(), fileName ?? $"mazedit-{Guid.NewGuid():N}.maz");
         File.WriteAllBytes(path, data);
         try
         {

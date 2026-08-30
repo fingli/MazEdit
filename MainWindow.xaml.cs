@@ -17,7 +17,10 @@ namespace MazEdit
 
         private void OpenBtn_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new OpenFileDialog { Filter = "Mazatrol Files|*.maz" };
+            var dlg = new OpenFileDialog
+            {
+                Filter = "Mazatrol files|*.maz;*.pad|All files|*.*"
+            };
 
             if (dlg.ShowDialog() != true)
                 return;
@@ -27,7 +30,7 @@ namespace MazEdit
                 _currentFilePath = dlg.FileName;
                 _currentProgram = _parser.ParseSubProgram(_currentFilePath);
 
-                ProgHeader.Text = $"MAT: {_currentProgram.Material}  INITIAL-Z: {_currentProgram.InitialZ}";
+                ProgHeader.Text = FormatProgramHeader(_currentProgram);
                 MazGrid.ItemsSource = _currentProgram.Units;
                 ExportDumpBtn.IsEnabled = true;
                 StatusTxt.Text = $"Loaded {_currentProgram.Units.Count} units from {Path.GetFileName(_currentFilePath)}.";
@@ -36,6 +39,22 @@ namespace MazEdit
             {
                 MessageBox.Show($"Error opening file: {ex.Message}", "Open Failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private static string FormatProgramHeader(MazProgram program)
+        {
+            var parts = new List<string>();
+            if (program.ProgramNumber is int n)
+                parts.Add($"O{n}");
+            if (!string.IsNullOrEmpty(program.ProgramName))
+                parts.Add(program.ProgramName);
+            if (!string.IsNullOrEmpty(program.FormatId))
+                parts.Add($"({program.FormatId})");
+            if (!string.IsNullOrEmpty(program.Material))
+                parts.Add($"MAT: {program.Material}");
+            if (program.InitialZ != 0)
+                parts.Add($"INITIAL-Z: {program.InitialZ}");
+            return parts.Count == 0 ? "LOADED" : string.Join("  ", parts);
         }
 
         private void ExportDumpBtn_Click(object sender, RoutedEventArgs e)

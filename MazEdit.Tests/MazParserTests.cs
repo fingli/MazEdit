@@ -319,6 +319,7 @@ public class MazParserTests
         Assert.Equal(200, program.InitialZ);
         Assert.Equal(3, program.MultiMode);
         Assert.Contains("MULTI MODE=OFFSET TYPE", program.Units[0].Summary);
+        Assert.Contains($"NAME={program.ProgramName}", program.Units[0].Summary);
 
         string[] types = program.Units.Select(u => u.TypeName).ToArray();
         Assert.Equal(

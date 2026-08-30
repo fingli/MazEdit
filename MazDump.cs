@@ -15,10 +15,14 @@ namespace MazEdit
 
             sb.AppendLine($"File: {Path.GetFileName(filePath)}");
             sb.AppendLine($"Size: {data.Length} bytes");
+            sb.AppendLine($"Program name: {program.ProgramName}");
+            sb.AppendLine($"Program number: {(program.ProgramNumber is int n ? n.ToString() : "(not in packed .maz)")}");
+            if (!string.IsNullOrEmpty(program.FormatId))
+                sb.AppendLine($"Format: {program.FormatId}");
             sb.AppendLine($"Material: {program.Material}");
             sb.AppendLine($"Initial-Z: {program.InitialZ}");
             sb.AppendLine($"Multi mode: {program.MultiMode}");
-            sb.AppendLine($"Header+0x08: {program.ProgramNo}");
+            sb.AppendLine($"Packed header+0x08: {program.PackedHeader08}");
             sb.AppendLine();
             sb.AppendLine("=== Program (PAD-style) ===");
 

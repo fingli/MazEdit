@@ -5,8 +5,7 @@ using System.Text;
 namespace MazEdit
 {
     /// <summary>
-    /// Reads Mazatrol Nexus 2 / Matrix sub-program (.maz) binary files.
-    /// Layout confirmed against TEST.MAZ and its PAD listing (MG3-252).
+    /// Reads packed Mazatrol .maz files, or EIA/PAD headers (O-number, MG3-xxx, program name).
     /// </summary>
     public class MazParser
     {
@@ -27,10 +26,28 @@ namespace MazEdit
                 return program;
 
             byte[] data = File.ReadAllBytes(filePath);
+            program.ProgramName = Path.GetFileNameWithoutExtension(filePath);
+
+            if (MazEiaHeader.LooksLikeEia(data) && MazEiaHeader.TryParse(data, out MazEiaHeader eia))
+            {
+                program.ProgramNumber = eia.ProgramNumber;
+                program.FormatId = eia.FormatId;
+                if (!string.IsNullOrEmpty(eia.ProgramName))
+                    program.ProgramName = eia.ProgramName;
+
+                program.Units.Add(new MazUnit
+                {
+                    UnitNo = 0,
+                    TypeName = "SETUP",
+                    Summary = FormatEiaSetup(program)
+                });
+                return program;
+            }
+
             if (data.Length < MaterialOffset + MaterialLength)
                 return program;
 
-            program.ProgramNo = BitConverter.ToInt32(data, ProgramNoOffset);
+            program.PackedHeader08 = BitConverter.ToInt32(data, ProgramNoOffset);
             program.MultiMode = data[MultiModeOffset];
             program.InitialZ = Coord(data, 0, InitialZOffset);
             program.Material = Encoding.ASCII.GetString(data, MaterialOffset, MaterialLength).TrimEnd('\0');
@@ -41,8 +58,8 @@ namespace MazEdit
                 SequenceNo = 0,
                 TypeName = "SETUP",
                 FileOffset = 0,
-                Summary = Format("MAT={0}  INITIAL-Z={1}  MULTI MODE={2}",
-                    program.Material, Num(program.InitialZ), DecodeMultiMode(program.MultiMode)),
+                Summary = Format("NAME={0}  MAT={1}  INITIAL-Z={2}  MULTI MODE={3}",
+                    program.ProgramName, program.Material, Num(program.InitialZ), DecodeMultiMode(program.MultiMode)),
                 Z_Coord = program.InitialZ
             };
             program.Units.Add(setup);
@@ -192,6 +209,15 @@ namespace MazEdit
         }
 
         private static bool IsChildMarker(byte marker) => marker is 0xA0 or 0xB1 or 0xC2;
+
+        private static string FormatEiaSetup(MazProgram program)
+        {
+            string o = program.ProgramNumber is int n
+                ? n.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : "-";
+            string format = string.IsNullOrEmpty(program.FormatId) ? "-" : program.FormatId;
+            return Format("NAME={0}  O={1}  FORMAT={2}", program.ProgramName, o, format);
+        }
 
         private static string DecodeMultiMode(int code) => code switch
         {
