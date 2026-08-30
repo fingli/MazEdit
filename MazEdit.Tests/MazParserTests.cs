@@ -240,6 +240,35 @@ public class MazParserTests
         Assert.DoesNotContain("M 0", unit.Summary);
     }
 
+    [Theory]
+    [InlineData(1, "CTR-DR")]
+    [InlineData(2, "DRILL")]
+    [InlineData(3, "REAMER")]
+    [InlineData(4, "TAP (M)")]
+    [InlineData(5, "TAP (UN)")]
+    [InlineData(6, "TAP (PT)")]
+    [InlineData(7, "TAP (PF)")]
+    [InlineData(8, "TAP (PS)")]
+    [InlineData(9, "TAP (OTHER)")]
+    [InlineData(10, "BCK FACE")]
+    [InlineData(11, "BOR BAR")]
+    [InlineData(12, "B-B BAR")]
+    [InlineData(13, "CHAMFER")]
+    [InlineData(14, "FCE MILL")]
+    [InlineData(15, "END MILL")]
+    [InlineData(16, "OTHER")]
+    [InlineData(17, "CHIP VAC")]
+    [InlineData(18, "T. SENS.")]
+    [InlineData(19, "BAL EMIL")]
+    public void ParseSubProgram_Tool_MapsMazatrolToolTypes(byte code, string name)
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0xB1, 1);
+        MazFileBuilder.WriteByte(data, 0, 9, code);
+
+        Assert.Contains(name, MazFileBuilder.Parse(data).Units[1].Summary);
+    }
+
     [Fact]
     public void ParseSubProgram_Figure_LineUsesSwappedXy()
     {

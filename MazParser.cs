@@ -265,7 +265,25 @@ namespace MazEdit
 
         private static string DecodeToolType(byte code) => code switch
         {
+            1 => "CTR-DR",
+            2 => "DRILL",
+            3 => "REAMER",
+            4 => "TAP (M)",
+            5 => "TAP (UN)",
+            6 => "TAP (PT)",
+            7 => "TAP (PF)",
+            8 => "TAP (PS)",
+            9 => "TAP (OTHER)",
+            10 => "BCK FACE",
+            11 => "BOR BAR",
+            12 => "B-B BAR",
+            13 => "CHAMFER",
+            14 => "FCE MILL",
             15 => "END MILL",
+            16 => "OTHER",
+            17 => "CHIP VAC",
+            18 => "T. SENS.",
+            19 => "BAL EMIL",
             _ => $"T{code}"
         };
 
