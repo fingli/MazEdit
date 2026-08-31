@@ -197,6 +197,14 @@ namespace MazEdit
             "INDEX", "Index",
             ["TURN X", "Y", "Z", "ANGLE", "DIR"], packedMarker: 0x0C);
 
+        public static readonly MazatrolUnitKind Process = new(
+            "PROCESS", "Process unit (main program)",
+            ["UNo.", "P"], packedMarker: 0x0A);
+
+        public static readonly MazatrolUnitKind SubPro = new(
+            "SUB PRO", "Subprogram call",
+            ["UNo.", "NAME", "L", "F", "K"], packedMarker: 0x05);
+
         public static readonly MazatrolUnitKind Wpc = new(
             "WPC", "Workpiece coordinates",
             ["X", "Y", "th", "Z"], packedMarker: 0x02);
@@ -215,7 +223,7 @@ namespace MazEdit
 
         public static readonly MazatrolUnitKind End = new(
             "END", "End unit",
-            ["CONTI.", "NUMBER", "ATC", "RETURN", "WORK No.", "EXECUTE"], packedMarker: 0x04);
+            ["CONTI.", "NUMBER", "ATC", "RETURN", "WORK No.", "NAME", "EXECUTE"], packedMarker: 0x04);
 
         public static readonly MazatrolUnitKind Drilling = new(
             "DRILL", "Drilling unit",
@@ -319,7 +327,7 @@ namespace MazEdit
 
         public static readonly IReadOnlyList<MazatrolUnitKind> ProgramUnits =
         [
-            Setup, Ofs, Index, Wpc, Offset, Tool, Figure, End
+            Setup, Ofs, Index, Process, SubPro, Wpc, Offset, Tool, Figure, End
         ];
 
         public static readonly IReadOnlyList<MazatrolUnitKind> MachiningUnits =

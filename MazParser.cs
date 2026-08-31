@@ -14,6 +14,8 @@ namespace MazEdit
         internal const int InitialZOffset = 0x28;
         internal const int MaterialOffset = 0x54;
         internal const int MaterialLength = 12;
+        internal const int UnitNameOffset = 36;
+        internal const int UnitNameLength = 16;
         internal const int UnitBlockStart = 0x64;
         internal const int UnitBlockSize = 100;
         internal const int CoordinateScale = 10000;
@@ -123,6 +125,19 @@ namespace MazEdit
                         MazatrolCatalog.TurnDir(data[i + 8]));
                     break;
 
+                case 0x0A:
+                    int processNo = BitConverter.ToInt16(data, i + 4);
+                    unit.TypeName = MazatrolCatalog.Process.TypeName;
+                    unit.Summary = Format("P={0}", processNo);
+                    break;
+
+                case 0x05:
+                    int subL = BitConverter.ToInt32(data, i + 20);
+                    string subName = AsciiZ(data, i + UnitNameOffset, UnitNameLength);
+                    unit.TypeName = MazatrolCatalog.SubPro.TypeName;
+                    unit.Summary = Format("NAME={0}  L={1}", subName, subL);
+                    break;
+
                 case 0x02:
                     int wpcNo = BitConverter.ToInt32(data, i + 8);
                     unit.TypeName = $"WPC-{wpcNo}";
@@ -187,9 +202,11 @@ namespace MazEdit
                     int atc = data[i + 11];
                     int workNo = BitConverter.ToInt16(data, i + 16);
                     int execute = data[i + 20];
-                    unit.Summary = Format("CONTI={0}  NUMBER={1}  ATC={2}  RETURN={3}{4}  EXECUTE={5}",
+                    string endName = AsciiZ(data, i + UnitNameOffset, UnitNameLength);
+                    unit.Summary = Format("CONTI={0}  NUMBER={1}  ATC={2}  RETURN={3}{4}{5}  EXECUTE={6}",
                         conti, number, atc, MazatrolCatalog.EndReturn(endReturn),
                         workNo == 0 ? "" : Format("  WORK No.={0}", workNo),
+                        string.IsNullOrEmpty(endName) ? "" : Format("  NAME={0}", endName),
                         MazatrolCatalog.Execute(execute));
                     break;
 
@@ -224,6 +241,15 @@ namespace MazEdit
                 : "-";
             string format = string.IsNullOrEmpty(program.FormatId) ? "-" : program.FormatId;
             return Format("NAME={0}  O={1}  FORMAT={2}", program.ProgramName, o, format);
+        }
+
+        private static string AsciiZ(byte[] data, int offset, int maxLength)
+        {
+            int limit = Math.Min(data.Length, offset + maxLength);
+            int end = offset;
+            while (end < limit && data[end] != 0)
+                end++;
+            return Encoding.ASCII.GetString(data, offset, end - offset).Trim();
         }
 
         private static string DecodeToolLetter(byte index)

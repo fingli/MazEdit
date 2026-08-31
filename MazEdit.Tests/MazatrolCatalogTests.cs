@@ -77,6 +77,8 @@ public class MazatrolCatalogTests
     {
         Assert.Equal((byte)0x40, MazatrolCatalog.CentralLinear.PackedMarker);
         Assert.Equal((byte)0x04, MazatrolCatalog.End.PackedMarker);
+        Assert.Equal((byte)0x0A, MazatrolCatalog.Process.PackedMarker);
+        Assert.Equal((byte)0x05, MazatrolCatalog.SubPro.PackedMarker);
         Assert.Null(MazatrolCatalog.Drilling.PackedMarker);
     }
 }

@@ -134,6 +134,35 @@ public class MazParserTests
     }
 
     [Fact]
+    public void ParseSubProgram_Process_ReadsProcessNumber()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x0A, 1);
+        MazFileBuilder.WriteInt16(data, 0, 4, 1);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("PROCESS", unit.TypeName);
+        Assert.False(unit.IsChild);
+        Assert.Equal("P=1", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_SubPro_ReadsNameAndL()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x05, 3);
+        MazFileBuilder.WriteInt32(data, 0, 20, 1);
+        MazFileBuilder.WriteAscii(data, 0, 36, "PUSHKA_25");
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("SUB PRO", unit.TypeName);
+        Assert.False(unit.IsChild);
+        Assert.Equal("NAME=PUSHKA_25  L=1", unit.Summary);
+    }
+
+    [Fact]
     public void ParseSubProgram_Wpc_UsesNumberAndCoords()
     {
         var data = MazFileBuilder.Header(blockCount: 1);
@@ -316,6 +345,7 @@ public class MazParserTests
         Assert.Equal("CONTI=1  NUMBER=1  ATC=0  RETURN=Fixed point  EXECUTE=YES", unit.Summary);
         Assert.DoesNotContain("WORK No.", unit.Summary);
         Assert.DoesNotContain("DIR=", unit.Summary);
+        Assert.DoesNotContain("NAME=", unit.Summary);
     }
 
     [Theory]
@@ -352,6 +382,17 @@ public class MazParserTests
         MazFileBuilder.WriteInt16(data, 0, 16, 7);
 
         Assert.Contains("WORK No.=7", MazFileBuilder.Parse(data).Units[1].Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_End_ShowsNameWhenSet()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x04, 11);
+        MazFileBuilder.WriteByte(data, 0, 8, 2);
+        MazFileBuilder.WriteAscii(data, 0, 36, "2_TSK");
+
+        Assert.Contains("NAME=2_TSK", MazFileBuilder.Parse(data).Units[1].Summary);
     }
 
     [Fact]

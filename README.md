@@ -61,13 +61,15 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 |------|-------|
 | file header | Common unit (U0): NAME, MAT (`0x54` ASCII: CST IRN, DUCT IRN, CBN STL, ALY STL, STNLESS, ALUMINUM, L.C.STL, AL CAST), INITIAL-Z (`0x28`), ATC MODE (`0x08`), MULTI MODE (`0x09`: 1=OFF, 2=5*2, 3=OFFSET TYPE) |
 | `0xA0` | OFS point (child of SETUP) |
+| `0x0A` | PROCESS (main) — P (`+4`) |
 | `0x0C` | INDEX |
+| `0x05` | SUB PRO — NAME (`+36` ASCII), L (`+20`); PAD also has F/K (0 in 1_TSK) |
 | `0x02` | WPC |
 | `0x03` | OFFSET |
 | `0x40` | LINE CTR (central linear) — DEPTH, SRV-Z, SRV-R, RGH, FIN-Z; START/END not decoded yet |
 | `0xB1` | TOOL (child) — type (`+9`: 1 CTR-DR … 19 BAL EMIL), Φ, letter, No, ZFD, DEP-Z, C-SP, FR, M-codes; APRCH-X/Y only if set |
 | `0xC2` | FIGURE LINE / CW (child) |
-| `0x04` | END — CONTI (`+9`), NUMBER (`+10`), ATC (`+11`), RETURN (`+8`: 0=None, 1=Machine zero point, 2=Fixed point, 3=Arbitrary), WORK No. (`+16` if set), EXECUTE (`+20`: 0=YES, 1=NO) |
+| `0x04` | END — CONTI (`+9`), NUMBER (`+10`), ATC (`+11`), RETURN (`+8`: 0=None, 1=Machine zero point, 2=Fixed point, 3=Arbitrary), WORK No. (`+16` if set), NAME (`+36` ASCII if set), EXECUTE (`+20`: 0=YES, 1=NO) |
 | Other | `CODE XX` |
 
 ## License

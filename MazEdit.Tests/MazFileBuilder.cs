@@ -37,6 +37,13 @@ internal static class MazFileBuilder
     public static void WriteInt32(byte[] data, int blockIndex, int fieldOffset, int value)
         => BitConverter.GetBytes(value).CopyTo(data, Offset(blockIndex) + fieldOffset);
 
+    public static void WriteAscii(byte[] data, int blockIndex, int fieldOffset, string text, int length = 16)
+    {
+        byte[] bytes = Encoding.ASCII.GetBytes(text);
+        int n = Math.Min(bytes.Length, length);
+        Buffer.BlockCopy(bytes, 0, data, Offset(blockIndex) + fieldOffset, n);
+    }
+
     public static void WriteByte(byte[] data, int blockIndex, int fieldOffset, byte value)
         => data[Offset(blockIndex) + fieldOffset] = value;
 
