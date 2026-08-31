@@ -163,6 +163,92 @@ public class MazParserTests
     }
 
     [Fact]
+    public void ParseSubProgram_Drill_ReadsDiaDepthChmf_AndKeepsPointChildren()
+    {
+        var data = MazFileBuilder.Header(blockCount: 3);
+        MazFileBuilder.WriteBlock(data, 0, 0x20, 5);
+        MazFileBuilder.WriteCoord(data, 0, 36, 54);
+        MazFileBuilder.WriteCoord(data, 0, 40, 10);
+        MazFileBuilder.WriteCoord(data, 0, 44, 2.5f);
+        MazFileBuilder.WriteBlock(data, 1, 0xB0, 1);
+        MazFileBuilder.WriteByte(data, 1, 9, 2);
+        MazFileBuilder.WriteByte(data, 1, 11, 24);
+        MazFileBuilder.WriteInt16(data, 1, 22, 3);
+        MazFileBuilder.WriteCoord(data, 1, 36, 54);
+        MazFileBuilder.WriteBlock(data, 2, 0xC0, 1);
+        MazFileBuilder.WriteByte(data, 2, 8, 1);
+        MazFileBuilder.WriteCoord(data, 2, 36, -0.15f);
+
+        var program = MazFileBuilder.Parse(data);
+        MazUnit drill = program.Units[1];
+        MazUnit tool = program.Units[2];
+        MazUnit pnt = program.Units[3];
+
+        Assert.Equal("DRILL", drill.TypeName);
+        Assert.Equal("DIA=54  DEPTH=10  CHMF=2.5", drill.Summary);
+        Assert.False(drill.IsChild);
+        Assert.Equal(5, tool.UnitNo);
+        Assert.True(tool.IsChild);
+        Assert.Equal("TOOL", tool.TypeName);
+        Assert.Contains("DRILL", tool.Summary);
+        Assert.Contains("S=24", tool.Summary);
+        Assert.Equal(5, pnt.UnitNo);
+        Assert.True(pnt.IsChild);
+        Assert.Equal("PNT", pnt.TypeName);
+        Assert.Contains("A=1", pnt.Summary);
+        Assert.Contains("X=-0.15", pnt.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Tap_ReadsNomMajorPitch()
+    {
+        var data = MazFileBuilder.Header(blockCount: 1);
+        MazFileBuilder.WriteBlock(data, 0, 0x24, 11);
+        MazFileBuilder.WriteInt16(data, 0, 36, 1);
+        MazFileBuilder.WriteCoord(data, 0, 40, 10);
+        MazFileBuilder.WriteCoord(data, 0, 44, 1.5f);
+        MazFileBuilder.WriteCoord(data, 0, 48, 23.5f);
+        MazFileBuilder.WriteCoord(data, 0, 52, 1);
+
+        var unit = MazFileBuilder.Parse(data).Units[1];
+
+        Assert.Equal("TAP", unit.TypeName);
+        Assert.Contains("NOM=M", unit.Summary);
+        Assert.Contains("MAJOR-φ=10", unit.Summary);
+        Assert.Contains("PITCH=1.5", unit.Summary);
+        Assert.Contains("TAP-DEP=23.5", unit.Summary);
+        Assert.Contains("CHMF=1", unit.Summary);
+    }
+
+    [Fact]
+    public void ParseSubProgram_Manual_ReadsToolAndPathChildren()
+    {
+        var data = MazFileBuilder.Header(blockCount: 2);
+        MazFileBuilder.WriteBlock(data, 0, 0x06, 6);
+        MazFileBuilder.WriteByte(data, 0, 9, 15);
+        MazFileBuilder.WriteByte(data, 0, 11, 24);
+        MazFileBuilder.WriteInt32(data, 0, 24, 4);
+        MazFileBuilder.WriteCoord(data, 0, 36, 50);
+        MazFileBuilder.WriteBlock(data, 1, 0xA1, 1);
+        MazFileBuilder.WriteCoord(data, 1, 36, -0.15f);
+        MazFileBuilder.WriteCoord(data, 1, 44, 200);
+        MazFileBuilder.WriteInt32(data, 1, 60, 950);
+
+        var program = MazFileBuilder.Parse(data);
+        MazUnit manual = program.Units[1];
+        MazUnit path = program.Units[2];
+
+        Assert.Equal("MANUAL", manual.TypeName);
+        Assert.Equal("END MILL  Φ=50  S=24  P=4", manual.Summary);
+        Assert.Equal(6, path.UnitNo);
+        Assert.True(path.IsChild);
+        Assert.Equal("PATH", path.TypeName);
+        Assert.Contains("X=-0.15", path.Summary);
+        Assert.Contains("Z=200", path.Summary);
+        Assert.Contains("F=950", path.Summary);
+    }
+
+    [Fact]
     public void ParseSubProgram_Wpc_UsesNumberAndCoords()
     {
         var data = MazFileBuilder.Header(blockCount: 1);

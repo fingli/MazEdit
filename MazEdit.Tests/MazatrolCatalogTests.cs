@@ -79,6 +79,12 @@ public class MazatrolCatalogTests
         Assert.Equal((byte)0x04, MazatrolCatalog.End.PackedMarker);
         Assert.Equal((byte)0x0A, MazatrolCatalog.Process.PackedMarker);
         Assert.Equal((byte)0x05, MazatrolCatalog.SubPro.PackedMarker);
-        Assert.Null(MazatrolCatalog.Drilling.PackedMarker);
+        Assert.Equal((byte)0x20, MazatrolCatalog.Drilling.PackedMarker);
+        Assert.Equal((byte)0x24, MazatrolCatalog.Tapping.PackedMarker);
+        Assert.Equal((byte)0x06, MazatrolCatalog.Manual.PackedMarker);
+        Assert.Equal((byte)0xB0, MazatrolCatalog.PointTool.PackedMarker);
+        Assert.Equal((byte)0xC0, MazatrolCatalog.PointFigure.PackedMarker);
+        Assert.Equal((byte)0xA1, MazatrolCatalog.ManualPath.PackedMarker);
+        Assert.Null(MazatrolCatalog.RghCbor.PackedMarker);
     }
 }

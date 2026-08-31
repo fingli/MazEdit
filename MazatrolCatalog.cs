@@ -217,9 +217,25 @@ namespace MazEdit
             "TOOL", "Tool",
             ["T", "Φ", "letter", "No", "ZFD", "DEP-Z", "C-SP", "FR", "M"], packedMarker: 0xB1);
 
+        public static readonly MazatrolUnitKind PointTool = new(
+            "TOOL", "Point-machining tool",
+            ["T", "S", "No", "Φ", "E", "H", "DEP-Z", "C-SP", "FR", "M"], packedMarker: 0xB0);
+
         public static readonly MazatrolUnitKind Figure = new(
             "FIGURE", "Figure line / arc",
             ["X", "Y", "R/th"], packedMarker: 0xC2);
+
+        public static readonly MazatrolUnitKind PointFigure = new(
+            "PNT", "Point/hole figure",
+            ["A", "X", "Y", "DA", "DB", "TA", "TB"], packedMarker: 0xC0);
+
+        public static readonly MazatrolUnitKind Manual = new(
+            "MANUAL", "Manual program unit",
+            ["T", "Φ", "S", "P"], packedMarker: 0x06);
+
+        public static readonly MazatrolUnitKind ManualPath = new(
+            "PATH", "Manual path segment",
+            ["X", "Y", "Z", "F"], packedMarker: 0xA1);
 
         public static readonly MazatrolUnitKind End = new(
             "END", "End unit",
@@ -227,7 +243,7 @@ namespace MazEdit
 
         public static readonly MazatrolUnitKind Drilling = new(
             "DRILL", "Drilling unit",
-            [Field.Uno, Field.Dia, Field.Depth, Field.Chmf]);
+            [Field.Uno, Field.Dia, Field.Depth, Field.Chmf], packedMarker: 0x20);
 
         public static readonly MazatrolUnitKind RghCbor = new(
             "RGH CBOR", "RGH CBOR machining unit",
@@ -243,7 +259,8 @@ namespace MazEdit
 
         public static readonly MazatrolUnitKind Tapping = new(
             "TAP", "Tapping unit",
-            [Field.Uno, Field.Nom, Field.MajorPhi, Field.Pitch, Field.TapDep, Field.Chmf, Field.Chp]);
+            [Field.Uno, Field.Nom, Field.MajorPhi, Field.Pitch, Field.TapDep, Field.Chmf, Field.Chp],
+            packedMarker: 0x24);
 
         public static readonly MazatrolUnitKind BackBoring = new(
             "BCK BOR", "Back boring unit",
@@ -327,7 +344,8 @@ namespace MazEdit
 
         public static readonly IReadOnlyList<MazatrolUnitKind> ProgramUnits =
         [
-            Setup, Ofs, Index, Process, SubPro, Wpc, Offset, Tool, Figure, End
+            Setup, Ofs, Index, Process, SubPro, Wpc, Offset, Tool, PointTool, Figure, PointFigure,
+            Manual, ManualPath, End
         ];
 
         public static readonly IReadOnlyList<MazatrolUnitKind> MachiningUnits =

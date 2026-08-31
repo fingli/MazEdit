@@ -67,6 +67,12 @@ Do not commit real `.maz` programs. Copy them into `TestData/` (gitignored) and 
 | `0x02` | WPC |
 | `0x03` | OFFSET |
 | `0x40` | LINE CTR (central linear) — DEPTH, SRV-Z, SRV-R, RGH, FIN-Z; START/END not decoded yet |
+| `0x20` | DRILL — DIA (`+36`), DEPTH (`+40`), CHMF (`+44`) |
+| `0xB0` | TOOL (child of DRILL/TAP) — T, S, No, Φ, E/H, DEP-Z, C-SP, FR, M |
+| `0xC0` | PNT hole figure (child) — A, X, Y, DA/DB, TA/TB |
+| `0x06` | MANUAL — T, Φ, S, P |
+| `0xA1` | PATH (child of MANUAL) — X, Y, Z, F |
+| `0x24` | TAP — NOM (`+36`), MAJOR-φ (`+40`), PITCH (`+44`), TAP-DEP (`+48`), CHMF (`+52`) |
 | `0xB1` | TOOL (child) — type (`+9`: 1 CTR-DR … 19 BAL EMIL), Φ, letter, No, ZFD, DEP-Z, C-SP, FR, M-codes; APRCH-X/Y only if set |
 | `0xC2` | FIGURE LINE / CW (child) |
 | `0x04` | END — CONTI (`+9`), NUMBER (`+10`), ATC (`+11`), RETURN (`+8`: 0=None, 1=Machine zero point, 2=Fixed point, 3=Arbitrary), WORK No. (`+16` if set), NAME (`+36` ASCII if set), EXECUTE (`+20`: 0=YES, 1=NO) |

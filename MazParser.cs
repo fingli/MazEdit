@@ -158,6 +158,33 @@ namespace MazEdit
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord), rgh, Num(unit.Parameter));
                     break;
 
+                case 0x20:
+                    unit.TypeName = MazatrolCatalog.Drilling.TypeName;
+                    unit.Summary = Format("DIA={0}  DEPTH={1}  CHMF={2}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord));
+                    break;
+
+                case 0x24:
+                    int nom = BitConverter.ToInt16(data, i + 36);
+                    float major = Coord(data, i, 40);
+                    float pitch = Coord(data, i, 44);
+                    float tapDep = Coord(data, i, 48);
+                    float tapChmf = Coord(data, i, 52);
+                    unit.TypeName = MazatrolCatalog.Tapping.TypeName;
+                    unit.Summary = Format("NOM={0}  MAJOR-φ={1}  PITCH={2}  TAP-DEP={3}  CHMF={4}",
+                        MazatrolCatalog.TapNom(nom), Num(major), Num(pitch), Num(tapDep), Num(tapChmf));
+                    break;
+
+                case 0x06:
+                    byte mnlType = data[i + 9];
+                    int mnlS = data[i + 11];
+                    int mnlP = BitConverter.ToInt32(data, i + 24);
+                    float mnlDia = Coord(data, i, 36);
+                    unit.TypeName = MazatrolCatalog.Manual.TypeName;
+                    unit.Summary = Format("{0}  Φ={1}  S={2}  P={3}",
+                        MazatrolCatalog.ToolType(mnlType), Num(mnlDia), mnlS, mnlP);
+                    break;
+
                 case 0xB1:
                     float diameter = Coord(data, i, 36);
                     float aprchX = Coord(data, i, 40);
@@ -184,6 +211,26 @@ namespace MazEdit
                         csp, Num(fr), FormatMCodes(m1, m2, m3));
                     break;
 
+                case 0xB0:
+                    float pDia = Coord(data, i, 36);
+                    float pE = Coord(data, i, 40);
+                    float pH = Coord(data, i, 44);
+                    float pDepZ = Coord(data, i, 56);
+                    int pCsp = BitConverter.ToInt32(data, i + 60);
+                    float pFr = Coord(data, i, 64);
+                    int pNo = BitConverter.ToInt16(data, i + 22);
+                    int pM1 = BitConverter.ToInt16(data, i + 24);
+                    int pM2 = BitConverter.ToInt16(data, i + 26);
+                    int pAh = BitConverter.ToInt32(data, i + 52);
+                    unit.TypeName = MazatrolCatalog.PointTool.TypeName;
+                    unit.Summary = Format("{0}  Φ={1}  S={2}  No={3}{4}{5}{6}  DEP-Z={7}  C-SP={8}  FR={9}  {10}",
+                        MazatrolCatalog.ToolType(data[i + 9]), Num(pDia), data[i + 11], pNo,
+                        pE == 0 ? "" : Format("  E={0}", Num(pE)),
+                        pH == 0 ? "" : Format("  H={0}", Num(pH)),
+                        pAh == 0 ? "" : Format("  &H={0}", pAh),
+                        Num(pDepZ), pCsp, Num(pFr), FormatMCodes(pM1, pM2));
+                    break;
+
                 case 0xC2:
                     unit.X_Coord = Coord(data, i, 40);
                     unit.Y_Coord = Coord(data, i, 36);
@@ -192,6 +239,30 @@ namespace MazEdit
                     unit.TypeName = MazatrolCatalog.FigureType(data[i + 8]);
                     unit.Summary = Format("X={0}  Y={1}  R/th={2}",
                         Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Parameter));
+                    break;
+
+                case 0xC0:
+                    float pntX = Coord(data, i, 36);
+                    float pntY = Coord(data, i, 40);
+                    float da = Coord(data, i, 44);
+                    float db = Coord(data, i, 48);
+                    float ta = Coord(data, i, 52);
+                    float tb = Coord(data, i, 56);
+                    unit.TypeName = MazatrolCatalog.PointFigure.TypeName;
+                    unit.Summary = Format("A={0}  X={1}  Y={2}{3}{4}{5}{6}",
+                        data[i + 8], Num(pntX), Num(pntY),
+                        da == 0 ? "" : Format("  DA={0}", Num(da)),
+                        db == 0 ? "" : Format("  DB={0}", Num(db)),
+                        ta == 0 ? "" : Format("  TA={0}", Num(ta)),
+                        tb == 0 ? "" : Format("  TB={0}", Num(tb)));
+                    break;
+
+                case 0xA1:
+                    int pathF = BitConverter.ToInt32(data, i + 60);
+                    unit.TypeName = MazatrolCatalog.ManualPath.TypeName;
+                    unit.Summary = Format("X={0}  Y={1}  Z={2}{3}",
+                        Num(unit.X_Coord), Num(unit.Y_Coord), Num(unit.Z_Coord),
+                        pathF == 0 ? "" : Format("  F={0}", pathF));
                     break;
 
                 case 0x04:
@@ -216,12 +287,6 @@ namespace MazEdit
                 case 0x66:
                     unit.TypeName = "TOOL PATH";
                     break;
-                case 0x20:
-                    unit.TypeName = "POSITIONING";
-                    break;
-                case 0x24:
-                    unit.TypeName = "SPEED/FEED";
-                    break;
                 default:
                     unit.TypeName = $"CODE {marker:X2}";
                     unit.Summary = Format("X={0}  Y={1}  Z={2}  P={3}",
@@ -232,7 +297,8 @@ namespace MazEdit
             return unit;
         }
 
-        private static bool IsChildMarker(byte marker) => marker is 0xA0 or 0xB1 or 0xC2;
+        private static bool IsChildMarker(byte marker) =>
+            marker is 0xA0 or 0xA1 or 0xB0 or 0xB1 or 0xC0 or 0xC2;
 
         private static string FormatEiaSetup(MazProgram program)
         {
